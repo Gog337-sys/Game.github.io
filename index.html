@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ловец объектов - Telegram игра</title>
+    <title>Ловец объектов - Общая таблица лидеров</title>
     <style>
         * {
             margin: 0;
@@ -152,6 +152,24 @@
             color: rgba(255, 255, 255, 0.7);
         }
         
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .online {
+            background: rgba(46, 204, 113, 0.5);
+        }
+        
+        .offline {
+            background: rgba(231, 76, 60, 0.5);
+        }
+        
         /* Адаптивность для мобильных устройств */
         @media (max-width: 480px) {
             .game-canvas {
@@ -170,8 +188,14 @@
             }
         }
     </style>
+    
+    <!-- Добавляем Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 <body>
+    <div class="connection-status" id="connectionStatus">Подключение...</div>
+    
     <div class="container">
         <h1>🎮 Ловец объектов</h1>
         
@@ -191,9 +215,9 @@
         </div>
         
         <div class="leaderboard">
-            <h3>🏆 Таблица лидеров</h3>
+            <h3>🏆 Общая таблица лидеров</h3>
             <div id="leaderboardList">
-                <p class="status-message">Загрузка локальных результатов...</p>
+                <p class="status-message">Загрузка результатов...</p>
             </div>
         </div>
     </div>
@@ -209,6 +233,21 @@
     </div>
 
     <script>
+        // Конфигурация Firebase - ЗАМЕНИТЕ НА СВОЮ КОНФИГУРАЦИЮ
+        const firebaseConfig = {
+            apiKey: "ВАШ_API_KEY",
+            authDomain: "ВАШ_ПРОЕКТ.firebaseapp.com",
+            databaseURL: "https://ВАШ_ПРОЕКТ-default-rtdb.firebaseio.com",
+            projectId: "ВАШ_ПРОЕКТ",
+            storageBucket: "ВАШ_ПРОЕКТ.appspot.com",
+            messagingSenderId: "ВАШ_SENDER_ID",
+            appId: "ВАШ_APP_ID"
+        };
+        
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
         // Инициализация игры
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -223,6 +262,7 @@
         const leftBtn = document.getElementById('leftBtn');
         const rightBtn = document.getElementById('rightBtn');
         const startBtn = document.getElementById('startBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
         
         // Параметры игры
         let score = 0;
@@ -238,6 +278,24 @@
         let lastObjectTime = 0;
         let animationId;
         let isTelegramWebApp = false;
+        let userName = '';
+        
+        // Проверка подключения к интернету
+        function checkInternetConnection() {
+            if (navigator.onLine) {
+                connectionStatus.textContent = 'Онлайн';
+                connectionStatus.className = 'connection-status online';
+                return true;
+            } else {
+                connectionStatus.textContent = 'Офлайн';
+                connectionStatus.className = 'connection-status offline';
+                return false;
+            }
+        }
+        
+        // Мониторинг состояния подключения
+        window.addEventListener('online', checkInternetConnection);
+        window.addEventListener('offline', checkInternetConnection);
         
         // Инициализация Telegram Web App (безопасно)
         function initTelegramWebApp() {
@@ -245,64 +303,131 @@
                 if (typeof Telegram !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
                     isTelegramWebApp = true;
                     window.Telegram.WebApp.expand();
+                    
+                    // Получаем информацию о пользователе из Telegram
+                    const user = window.Telegram.WebApp.initDataUnsafe.user;
+                    if (user) {
+                        userName = user.first_name || '';
+                        if (user.username) {
+                            userName += ` (@${user.username})`;
+                        }
+                        playerNameInput.value = userName;
+                        playerNameInput.disabled = true;
+                    }
+                    
                     console.log("Telegram Web App инициализирован");
                 } else {
-                    console.log("Не в среде Telegram Web App, используется локальное хранилище");
+                    console.log("Не в среде Telegram Web App");
                 }
             } catch (error) {
                 console.log("Ошибка инициализации Telegram Web App:", error);
             }
         }
         
-        // Работа с локальным хранилищем
-        function getLeaderboard() {
-            try {
-                const stored = localStorage.getItem('catchGameLeaderboard');
-                return stored ? JSON.parse(stored) : [];
-            } catch (error) {
-                console.log("Ошибка загрузки из localStorage:", error);
-                return [];
+        // Сохранение результата в Firebase
+        async function saveScoreToFirebase(name, score) {
+            if (!checkInternetConnection()) {
+                leaderboardList.innerHTML = '<p class="status-message">Нет подключения к интернету</p>';
+                return false;
             }
-        }
-        
-        function saveLeaderboard(leaderboard) {
+            
             try {
-                localStorage.setItem('catchGameLeaderboard', JSON.stringify(leaderboard));
+                const playerName = name || 'Аноним';
+                const timestamp = new Date().getTime();
+                
+                // Сохраняем результат в Firebase
+                await database.ref('scores/' + timestamp).set({
+                    name: playerName,
+                    score: score,
+                    date: new Date().toLocaleDateString(),
+                    timestamp: timestamp
+                });
+                
                 return true;
             } catch (error) {
-                console.log("Ошибка сохранения в localStorage:", error);
+                console.error("Ошибка сохранения в Firebase:", error);
+                leaderboardList.innerHTML = '<p class="status-message">Ошибка сохранения результата</p>';
                 return false;
             }
         }
         
-        function addToLeaderboard(name, score) {
-            const leaderboard = getLeaderboard();
-            const newEntry = {
-                name: name || 'Аноним',
-                score: score,
-                date: new Date().toLocaleDateString()
-            };
+        // Загрузка таблицы лидеров из Firebase
+        async function loadLeaderboard() {
+            if (!checkInternetConnection()) {
+                leaderboardList.innerHTML = '<p class="status-message">Нет подключения к интернету</p>';
+                return;
+            }
             
-            leaderboard.push(newEntry);
-            leaderboard.sort((a, b) => b.score - a.score);
-            
-            // Сохраняем только топ-10 результатов
-            const topTen = leaderboard.slice(0, 10);
-            
-            if (saveLeaderboard(topTen)) {
-                return topTen;
-            } else {
-                return leaderboard;
+            try {
+                leaderboardList.innerHTML = '<p class="status-message">Загрузка результатов...</p>';
+                
+                // Получаем данные из Firebase
+                const snapshot = await database.ref('scores').orderByChild('score').limitToLast(10).once('value');
+                
+                if (!snapshot.exists()) {
+                    leaderboardList.innerHTML = '<p class="status-message">Пока нет результатов. Будьте первым!</p>';
+                    return;
+                }
+                
+                // Преобразуем данные в массив и сортируем по убыванию
+                const scores = [];
+                snapshot.forEach((childSnapshot) => {
+                    scores.push(childSnapshot.val());
+                });
+                
+                scores.sort((a, b) => b.score - a.score);
+                
+                // Отображаем таблицу лидеров
+                let html = '';
+                scores.forEach((entry, index) => {
+                    html += `
+                        <div class="leaderboard-item">
+                            <span>${index + 1}. ${entry.name}</span>
+                            <span>${entry.score}</span>
+                        </div>
+                    `;
+                });
+                
+                leaderboardList.innerHTML = html;
+            } catch (error) {
+                console.error("Ошибка загрузки из Firebase:", error);
+                leaderboardList.innerHTML = '<p class="status-message">Ошибка загрузки результатов</p>';
             }
         }
         
-        // Загрузка таблицы лидеров
-        function loadLeaderboard() {
+        // Режим офлайн - сохранение в локальное хранилище
+        function saveScoreToLocal(name, score) {
             try {
-                const leaderboard = getLeaderboard();
+                const playerName = name || 'Аноним';
+                const timestamp = new Date().getTime();
+                const leaderboard = JSON.parse(localStorage.getItem('catchGameLeaderboard') || '[]');
+                
+                leaderboard.push({
+                    name: playerName,
+                    score: score,
+                    date: new Date().toLocaleDateString(),
+                    timestamp: timestamp
+                });
+                
+                // Сортируем по убыванию и оставляем только топ-10
+                leaderboard.sort((a, b) => b.score - a.score);
+                const topTen = leaderboard.slice(0, 10);
+                
+                localStorage.setItem('catchGameLeaderboard', JSON.stringify(topTen));
+                return true;
+            } catch (error) {
+                console.error("Ошибка сохранения в localStorage:", error);
+                return false;
+            }
+        }
+        
+        // Загрузка локальной таблицы лидеров
+        function loadLocalLeaderboard() {
+            try {
+                const leaderboard = JSON.parse(localStorage.getItem('catchGameLeaderboard') || '[]');
                 
                 if (leaderboard.length === 0) {
-                    leaderboardList.innerHTML = '<p class="status-message">Пока нет результатов. Будьте первым!</p>';
+                    leaderboardList.innerHTML = '<p class="status-message">Локальных результатов нет</p>';
                     return;
                 }
                 
@@ -318,8 +443,36 @@
                 
                 leaderboardList.innerHTML = html;
             } catch (error) {
-                console.log("Ошибка загрузки таблицы лидеров:", error);
-                leaderboardList.innerHTML = '<p class="status-message">Ошибка загрузки результатов</p>';
+                console.error("Ошибка загрузки из localStorage:", error);
+                leaderboardList.innerHTML = '<p class="status-message">Ошибка загрузки локальных результатов</p>';
+            }
+        }
+        
+        // Попытка синхронизации локальных результатов с Firebase
+        async function syncLocalScores() {
+            if (!checkInternetConnection()) return;
+            
+            try {
+                const localScores = JSON.parse(localStorage.getItem('catchGameLeaderboard') || '[]');
+                const unsyncedScores = JSON.parse(localStorage.getItem('unsyncedScores') || '[]');
+                
+                // Объединяем все локальные результаты
+                const allScores = [...localScores, ...unsyncedScores];
+                
+                if (allScores.length === 0) return;
+                
+                // Пытаемся отправить каждый результат на сервер
+                for (const score of allScores) {
+                    await database.ref('scores/' + score.timestamp).set(score);
+                }
+                
+                // Очищаем локальное хранилище после успешной синхронизации
+                localStorage.removeItem('catchGameLeaderboard');
+                localStorage.removeItem('unsyncedScores');
+                
+                console.log("Локальные результаты синхронизированы с Firebase");
+            } catch (error) {
+                console.error("Ошибка синхронизации с Firebase:", error);
             }
         }
         
@@ -517,10 +670,34 @@
             }
         });
         
-        saveScoreButton.addEventListener('click', () => {
-            const playerName = playerNameInput.value.trim();
-            addToLeaderboard(playerName, score);
-            loadLeaderboard();
+        saveScoreButton.addEventListener('click', async () => {
+            const playerName = playerNameInput.value.trim() || 'Аноним';
+            
+            // Пытаемся сохранить в Firebase
+            const saved = await saveScoreToFirebase(playerName, score);
+            
+            if (!saved) {
+                // Если не удалось сохранить в Firebase, сохраняем локально
+                saveScoreToLocal(playerName, score);
+                
+                // Сохраняем также в отдельный список для последующей синхронизации
+                const unsyncedScores = JSON.parse(localStorage.getItem('unsyncedScores') || '[]');
+                unsyncedScores.push({
+                    name: playerName,
+                    score: score,
+                    date: new Date().toLocaleDateString(),
+                    timestamp: new Date().getTime()
+                });
+                localStorage.setItem('unsyncedScores', JSON.stringify(unsyncedScores));
+            }
+            
+            // Обновляем таблицу лидеров
+            if (checkInternetConnection()) {
+                await loadLeaderboard();
+            } else {
+                loadLocalLeaderboard();
+            }
+            
             gameOverElement.style.display = 'none';
         });
         
@@ -530,19 +707,21 @@
         });
         
         // Инициализация игры
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
             initTelegramWebApp();
-            loadLeaderboard();
-            draw();
+            checkInternetConnection();
             
-            // Авто-определение управления для мобильных устройств
-            if ('ontouchstart' in window) {
-                leftBtn.style.display = 'block';
-                rightBtn.style.display = 'block';
+            // Пытаемся синхронизировать локальные результаты
+            await syncLocalScores();
+            
+            // Загружаем таблицу лидеров
+            if (checkInternetConnection()) {
+                await loadLeaderboard();
             } else {
-                leftBtn.style.display = 'block';
-                rightBtn.style.display = 'block';
+                loadLocalLeaderboard();
             }
+            
+            draw();
         });
     </script>
 </body>
