@@ -2,985 +2,228 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ловец объектов - Игра с таблицей рейтинга</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Волшебные сердечки для телефона</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
         }
         
         body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
             min-height: 100vh;
-            background: linear-gradient(to bottom, #1a1a2e, #2a2a4a, #3a3a5a);
-            font-family: 'Arial', sans-serif;
-            overflow: hidden;
-            color: white;
-        }
-        
-        #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            max-width: 100%;
-            max-height: 100%;
-            overflow: hidden;
-        }
-        
-        #game-canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            background: #1a1a2e;
-        }
-        
-        #ui-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 3vw;
-            box-sizing: border-box;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-            z-index: 5;
-        }
-        
-        #controls {
-            position: absolute;
-            bottom: 5vh;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            gap: 10vw;
-            pointer-events: none;
-            z-index: 5;
-        }
-        
-        .control-btn {
-            width: 20vw;
-            height: 20vw;
-            max-width: 100px;
-            max-height: 100px;
-            border-radius: 50%;
-            background: rgba(0, 150, 255, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 10vw;
-            color: white;
-            pointer-events: auto;
-            touch-action: manipulation;
-            box-shadow: 0 0 15px rgba(0, 150, 255, 0.7);
-        }
-        
-        #start-screen, #game-over, #leaderboard-screen, #control-choice-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            background: rgba(10, 10, 40, 0.95);
-            z-index: 10;
-            padding: 5vw;
-            text-align: center;
+            justify-content: center;
+            overflow: hidden;
+            touch-action: manipulation;
+            padding: 20px;
         }
         
-        #game-over, #leaderboard-screen, #control-choice-screen {
-            display: none;
+        .container {
+            text-align: center;
+            z-index: 10;
+            max-width: 90%;
         }
         
         h1 {
-            font-size: 10vw;
-            margin-bottom: 5vw;
-            color: #4af;
-            text-shadow: 0 0 10px #4af, 0 0 20px #4af;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(255, 105, 180, 0.7);
         }
         
-        h2 {
-            font-size: 8vw;
-            margin-bottom: 5vw;
-            color: #6df;
-            text-shadow: 0 0 10px #6df;
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            line-height: 1.5;
         }
         
-        h3 {
-            font-size: 6vw;
-            margin-bottom: 3vw;
-            color: #8cf;
-            text-shadow: 0 0 10px #8cf;
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .heart {
+            position: absolute;
+            pointer-events: none;
+            animation: float 2.5s ease-in forwards;
+            z-index: 5;
+            user-select: none;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg) scale(1.5);
+                opacity: 0;
+            }
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         
         button {
-            padding: 4vw 8vw;
-            font-size: 5vw;
-            background: linear-gradient(to bottom, #4af, #28f);
+            background: linear-gradient(45deg, #ff2975, #ff8fa3);
             border: none;
-            border-radius: 10vw;
+            padding: 12px 20px;
+            border-radius: 50px;
             color: white;
+            font-size: 1rem;
             cursor: pointer;
-            margin: 2vw 0;
-            transition: all 0.3s;
-            box-shadow: 0 0 15px rgba(0, 150, 255, 0.7);
-            touch-action: manipulation;
-            width: 80%;
-            max-width: 300px;
+            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+            transition: all 0.3s ease;
+            font-weight: bold;
         }
         
         button:active {
             transform: scale(0.95);
-            box-shadow: 0 0 10px rgba(0, 150, 255, 0.5);
+            box-shadow: 0 2px 8px rgba(255, 105, 180, 0.6);
         }
         
-        .controls-container {
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
-            max-width: 800px;
-            margin: 5vw 0;
-            flex-wrap: wrap;
-        }
-        
-        .control-option {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 3vw;
-            padding: 5vw;
-            background: rgba(30, 30, 80, 0.5);
-            border-radius: 5vw;
-            width: 40%;
-            min-width: 250px;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-        }
-        
-        .control-option:hover, .control-option:active {
-            transform: scale(1.05);
-            border-color: #4af;
-            box-shadow: 0 0 20px rgba(0, 150, 255, 0.7);
-        }
-        
-        .control-icon {
-            font-size: 15vw;
-            margin-bottom: 3vw;
-        }
-        
-        .instructions {
-            max-width: 90%;
+        .footer {
+            position: absolute;
+            bottom: 20px;
             text-align: center;
-            line-height: 1.6;
-            margin-bottom: 5vw;
-            color: #aaf;
-            font-size: 4vw;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
         }
         
-        .control-instructions {
-            font-size: 3.5vw;
-            color: #ccf;
-            margin-top: 2vw;
-            line-height: 1.4;
-        }
-        
-        .score-display {
-            font-size: 4.5vw;
-            background: rgba(30, 30, 70, 0.7);
-            padding: 2vw 4vw;
-            border-radius: 3vw;
-            box-shadow: 0 0 10px rgba(0, 150, 255, 0.5);
-        }
-        
-        #name-input {
-            padding: 3vw;
-            font-size: 4.5vw;
-            border: none;
-            border-radius: 3vw;
-            margin: 3vw 0;
-            width: 60%;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.9);
-        }
-        
-        #leaderboard {
-            width: 80%;
-            max-height: 50vh;
-            overflow-y: auto;
-            background: rgba(30, 30, 70, 0.7);
-            border-radius: 3vw;
-            padding: 3vw;
-            margin: 3vw 0;
-        }
-        
-        .leaderboard-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 2vw;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 4vw;
-        }
-        
-        .leaderboard-rank {
-            font-weight: bold;
-            color: #ff0;
-            margin-right: 3vw;
-        }
-        
-        .leaderboard-name {
-            flex-grow: 1;
-            text-align: left;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .leaderboard-score {
-            font-weight: bold;
-            color: #6df;
-            margin-left: 3vw;
-        }
-        
-        .connection-status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 100;
-        }
-        
-        .online {
-            background: rgba(46, 204, 113, 0.5);
-        }
-        
-        .offline {
-            background: rgba(231, 76, 60, 0.5);
-        }
-        
-        @media (min-width: 768px) {
+        /* Адаптивность для очень маленьких экранов */
+        @media (max-width: 400px) {
             h1 {
-                font-size: 48px;
+                font-size: 2rem;
             }
             
-            h2 {
-                font-size: 36px;
-            }
-            
-            h3 {
-                font-size: 28px;
+            p {
+                font-size: 1rem;
             }
             
             button {
-                padding: 15px 30px;
-                font-size: 20px;
-                border-radius: 30px;
-                margin: 10px 0;
-            }
-            
-            .instructions {
-                font-size: 16px;
-            }
-            
-            .control-instructions {
-                font-size: 14px;
-            }
-            
-            .score-display {
-                font-size: 20px;
-            }
-            
-            .control-btn {
-                width: 80px;
-                height: 80px;
-                font-size: 40px;
-            }
-            
-            #name-input {
-                padding: 10px;
-                font-size: 20px;
-                border-radius: 10px;
-                margin: 15px 0;
-            }
-            
-            #leaderboard {
-                padding: 20px;
-                border-radius: 10px;
-            }
-            
-            .leaderboard-item {
-                padding: 10px;
-                font-size: 18px;
-            }
-            
-            .control-option {
-                padding: 20px;
-                border-radius: 15px;
-                margin: 20px;
-            }
-            
-            .control-icon {
-                font-size: 80px;
-                margin-bottom: 15px;
-            }
-            
-            .controls-container {
-                margin: 30px 0;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .controls-container {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .control-option {
-                width: 90%;
-                margin: 10px 0;
+                padding: 10px 16px;
+                font-size: 0.9rem;
             }
         }
     </style>
-    <!-- Добавляем Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div class="connection-status" id="connectionStatus">Подключение...</div>
+    <div class="container">
+        <h1>✨ Волшебные сердечки ✨</h1>
+        
+        <div class="instructions">
+            <p>Коснитесь экрана в любом месте, чтобы создать красивые сердечки!</p>
+            <p>Используйте кнопки ниже для разных эффектов</p>
+        </div>
+        
+        <div class="controls">
+            <button id="single">Одно сердечко</button>
+            <button id="burst">Салют сердечек</button>
+            <button id="clear">Очистить экран</button>
+        </div>
+    </div>
     
-    <div id="game-container">
-        <canvas id="game-canvas"></canvas>
-        
-        <div id="ui-container">
-            <div class="score-display">Счет: <span id="score">0</span></div>
-            <div class="score-display">Жизни: <span id="lives">3</span> ❤️</div>
-        </div>
-        
-        <div id="controls">
-            <div class="control-btn" id="left-btn">←</div>
-            <div class="control-btn" id="right-btn">→</div>
-        </div>
-        
-        <div id="start-screen">
-            <h1>ЛОВЕЦ ОБЪЕКТОВ</h1>
-            <div class="instructions">
-                Ловите падающие объекты и старайтесь не пропустить ни одного!
-            </div>
-            <button id="start-button">НАЧАТЬ ИГРУ</button>
-            <button id="show-leaderboard">ТАБЛИЦА РЕЙТИНГА</button>
-            <button id="change-controls">СМЕНИТЬ УПРАВЛЕНИЕ</button>
-        </div>
-        
-        <div id="control-choice-screen">
-            <h2>ВЫБЕРИТЕ УПРАВЛЕНИЕ</h2>
-            
-            <div class="controls-container">
-                <div class="control-option" data-control-type="touch">
-                    <div class="control-icon">📱</div>
-                    <h3>СЕНСОРНОЕ</h3>
-                    <div class="control-instructions">Используйте кнопки на экране для перемещения платформы</div>
-                </div>
-                
-                <div class="control-option" data-control-type="mouse">
-                    <div class="control-icon">🖱️</div>
-                    <h3>МЫШЬ</h3>
-                    <div class="control-instructions">Двигайте мышью для управления платформой</div>
-                </div>
-            </div>
-            
-            <button id="back-to-menu">НАЗАД В МЕНЮ</button>
-        </div>
-        
-        <div id="game-over">
-            <h1>ИГРА ОКОНЧЕНА</h1>
-            <div class="instructions">Ваш счет: <span id="final-score">0</span></div>
-            <input type="text" id="name-input" placeholder="Введите ваше имя" maxlength="15">
-            <button id="save-score">СОХРАНИТЬ РЕЗУЛЬТАТ</button>
-            <button id="restart-button">ИГРАТЬ СНОВА</button>
-            <button id="to-leaderboard">ТАБЛИЦА РЕЙТИНГА</button>
-            <button id="to-menu">ГЛАВНОЕ МЕНЮ</button>
-        </div>
-        
-        <div id="leaderboard-screen">
-            <h2>ТАБЛИЦА РЕЙТИНГА</h2>
-            <div id="leaderboard"></div>
-            <button id="back-button">НАЗАД</button>
-        </div>
+    <div class="footer">
+        Создано с ❤️ для мобильных устройств
     </div>
 
     <script>
-        // Инициализация Supabase
-        const SUPABASE_URL = 'https://rcnsjytwevrjpnmzjcig.supabase.co'; // Замените на ваш URL
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjbnNqeXR3ZXZyanBubXpqY2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5MjA0OTEsImV4cCI6MjA3MjQ5NjQ5MX0.VqXWMYhGgbELT7QPmdQ-u9kYCrx9Vj1a4ETzOTLK-x4'; // Замените на ваш ключ
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Получаем элементы кнопок
+        const singleBtn = document.getElementById('single');
+        const burstBtn = document.getElementById('burst');
+        const clearBtn = document.getElementById('clear');
         
-        // Получаем элементы canvas и контекст
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Установка размеров canvas
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        // Обработчик для одиночного сердечка
+        function createHeart(x, y) {
+            const heart = document.createElement('div');
+            heart.className = 'heart';
+            heart.innerHTML = '❤️';
+            
+            // Позиционируем сердечко
+            heart.style.left = x + 'px';
+            heart.style.top = y + 'px';
+            
+            // Случайный размер
+            const size = Math.random() * 30 + 20;
+            heart.style.fontSize = size + 'px';
+            
+            // Случайный цвет
+            const colors = ['#ff2975', '#fee800', '#04fc43', '#00b7ff', '#ff00ff'];
+            heart.style.color = colors[Math.floor(Math.random() * colors.length)];
+            
+            // Случайная задержка анимации
+            heart.style.animationDelay = Math.random() * 0.5 + 's';
+            
+            document.body.appendChild(heart);
+            
+            // Удаляем элемент после анимации
+            setTimeout(() => {
+                if (heart.parentNode) {
+                    heart.remove();
+                }
+            }, 2500);
         }
         
-        // Элементы интерфейса
-        const startScreen = document.getElementById('start-screen');
-        const gameOverScreen = document.getElementById('game-over');
-        const leaderboardScreen = document.getElementById('leaderboard-screen');
-        const controlChoiceScreen = document.getElementById('control-choice-screen');
-        const startButton = document.getElementById('start-button');
-        const restartButton = document.getElementById('restart-button');
-        const saveScoreButton = document.getElementById('save-score');
-        const showLeaderboardButton = document.getElementById('show-leaderboard');
-        const toLeaderboardButton = document.getElementById('to-leaderboard');
-        const toMenuButton = document.getElementById('to-menu');
-        const changeControlsButton = document.getElementById('change-controls');
-        const backButton = document.getElementById('back-button');
-        const backToMenuButton = document.getElementById('back-to-menu');
-        const controlOptions = document.querySelectorAll('.control-option');
-        const scoreDisplay = document.getElementById('score');
-        const livesDisplay = document.getElementById('lives');
-        const finalScoreDisplay = document.getElementById('final-score');
-        const nameInput = document.getElementById('name-input');
-        const leaderboardElement = document.getElementById('leaderboard');
-        const leftBtn = document.getElementById('left-btn');
-        const rightBtn = document.getElementById('right-btn');
-        const connectionStatus = document.getElementById('connectionStatus');
-        
-        // Игровые переменные
-        let score = 0;
-        let lives = 3;
-        let gameActive = false;
-        let animationId;
-        let playerSpeed = 0;
-        const PLAYER_MAX_SPEED = 8;
-        let controlType = 'auto'; // auto, touch, mouse
-        
-        // Игровые объекты
-        const player = {
-            width: 0,
-            height: 0,
-            color: '#4af'
-        };
-        
-        // Размеры игрока зависят от размера экрана
-        function updatePlayerSize() {
-            player.width = canvas.width * 0.15;
-            player.height = canvas.height * 0.03;
-            player.x = canvas.width / 2 - player.width / 2;
-            player.y = canvas.height - player.height - canvas.height * 0.05;
-        }
-        
-        let fallingObjects = [];
-        let particles = [];
-        let stars = [];
-        
-        // Проверка подключения к интернету
-        function checkInternetConnection() {
-            if (navigator.onLine) {
-                connectionStatus.textContent = 'Онлайн';
-                connectionStatus.className = 'connection-status online';
-                return true;
-            } else {
-                connectionStatus.textContent = 'Офлайн';
-                connectionStatus.className = 'connection-status offline';
-                return false;
+        // Обработчик для салюта сердечек
+        function createHeartBurst(x, y) {
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => {
+                    const offsetX = (Math.random() - 0.5) * 100;
+                    const offsetY = (Math.random() - 0.5) * 100;
+                    createHeart(x + offsetX, y + offsetY);
+                }, i * 100);
             }
         }
         
-        // Мониторинг состояния подключения
-        window.addEventListener('online', checkInternetConnection);
-        window.addEventListener('offline', checkInternetConnection);
-        
-        // Определение типа устройства
-        function isTouchDevice() {
-            return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        }
-        
-        // Инициализация управления
-        function initControls() {
-            // Определяем тип управления по умолчанию
-            if (controlType === 'auto') {
-                controlType = isTouchDevice() ? 'touch' : 'mouse';
-            }
-            
-            // Показываем или скрываем кнопки управления в зависимости от выбранного типа
-            if (controlType === 'touch') {
-                document.getElementById('controls').style.display = 'flex';
-                setupTouchControls();
-            } else {
-                document.getElementById('controls').style.display = 'none';
-                setupMouseControls();
-            }
-        }
-        
-        // Настройка сенсорного управления
-        function setupTouchControls() {
-            // Удаляем обработчики мыши, если они были добавлены
-            canvas.removeEventListener('mousemove', movePlayerWithMouse);
-            
-            // Обработчики для кнопок управления
-            leftBtn.addEventListener('touchstart', () => playerSpeed = -PLAYER_MAX_SPEED);
-            leftBtn.addEventListener('touchend', () => playerSpeed = 0);
-            
-            rightBtn.addEventListener('touchstart', () => playerSpeed = PLAYER_MAX_SPEED);
-            rightBtn.addEventListener('touchend', () => playerSpeed = 0);
-            
-            // Также добавляем обработчики для мыши на случай использования на планшете
-            leftBtn.addEventListener('mousedown', () => playerSpeed = -PLAYER_MAX_SPEED);
-            leftBtn.addEventListener('mouseup', () => playerSpeed = 0);
-            leftBtn.addEventListener('mouseleave', () => playerSpeed = 0);
-            
-            rightBtn.addEventListener('mousedown', () => playerSpeed = PLAYER_MAX_SPEED);
-            rightBtn.addEventListener('mouseup', () => playerSpeed = 0);
-            rightBtn.addEventListener('mouseleave', () => playerSpeed = 0);
-        }
-        
-        // Настройка управления мышью
-        function setupMouseControls() {
-            // Удаляем обработчики touch, если они были добавлены
-            leftBtn.removeEventListener('touchstart', () => playerSpeed = -PLAYER_MAX_SPEED);
-            leftBtn.removeEventListener('touchend', () => playerSpeed = 0);
-            
-            rightBtn.removeEventListener('touchstart', () => playerSpeed = PLAYER_MAX_SPEED);
-            rightBtn.removeEventListener('touchend', () => playerSpeed = 0);
-            
-            // Добавляем обработчики мыши
-            canvas.addEventListener('mousemove', movePlayerWithMouse);
-        }
-        
-        // Функция движения игрока мышью
-        function movePlayerWithMouse(e) {
-            if (!gameActive) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            player.x = e.clientX - rect.left - player.width / 2;
-            
-            // Ограничение движения в пределах canvas
-            if (player.x < 0) player.x = 0;
-            if (player.x > canvas.width - player.width) {
-                player.x = canvas.width - player.width;
-            }
-        }
-        
-        // Создание фоновых звезд
-        function createStars() {
-            stars = [];
-            for (let i = 0; i < 50; i++) {
-                stars.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    size: Math.random() * 2 + 1,
-                    speed: Math.random() * 1 + 0.5
-                });
-            }
-        }
-        
-        // Обработчики событий
-        startButton.addEventListener('click', startGame);
-        restartButton.addEventListener('click', restartGame);
-        saveScoreButton.addEventListener('click', saveScore);
-        showLeaderboardButton.addEventListener('click', showLeaderboard);
-        toLeaderboardButton.addEventListener('click', showLeaderboard);
-        toMenuButton.addEventListener('click', showMainMenu);
-        changeControlsButton.addEventListener('click', showControlChoice);
-        backButton.addEventListener('click', hideLeaderboard);
-        backToMenuButton.addEventListener('click', showMainMenu);
-        
-        // Обработчики для выбора типа управления
-        controlOptions.forEach(option => {
-            option.addEventListener('click', (e) => {
-                controlType = e.currentTarget.dataset.controlType;
-                initControls();
-                showMainMenu();
-            });
+        // Обработчик касаний
+        document.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            createHeart(touch.clientX, touch.clientY);
         });
         
-        // Создание падающих объектов
-        function createFallingObject() {
-            if (!gameActive) return;
-            
-            const size = Math.random() * 30 + 20;
-            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9c74f', '#ff9f1c', '#e71d36'];
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            
-            fallingObjects.push({
-                x: Math.random() * (canvas.width - size),
-                y: -size,
-                width: size,
-                height: size,
-                speed: Math.random() * 3 + 1,
-                color: color,
-                rotation: 0,
-                rotationSpeed: Math.random() * 0.05 - 0.025
-            });
-        }
+        // Обработчик кликов (для тестирования на ПК)
+        document.addEventListener('click', function(e) {
+            createHeart(e.clientX, e.clientY);
+        });
         
-        // Создание частиц для эффектов
-        function createParticles(x, y, color, count) {
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x: x,
-                    y: y,
-                    size: Math.random() * 3 + 1,
-                    speedX: Math.random() * 4 - 2,
-                    speedY: Math.random() * 4 - 2,
-                    color: color,
-                    life: 30
-                });
-            }
-        }
+        // Обработчики кнопок
+        singleBtn.addEventListener('click', function() {
+            // Создаем сердечко в центре экрана
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            createHeart(centerX, centerY);
+        });
         
-        // Обновление игры
-        function update() {
-            // Движение игрока (для сенсорного управления)
-            if (controlType === 'touch') {
-                player.x += playerSpeed;
-                if (player.x < 0) player.x = 0;
-                if (player.x > canvas.width - player.width) {
-                    player.x = canvas.width - player.width;
-                }
-            }
-            
-            // Движение падающих объектов и проверка столкновений
-            for (let i = fallingObjects.length - 1; i >= 0; i--) {
-                fallingObjects[i].y += fallingObjects[i].speed;
-                fallingObjects[i].rotation += fallingObjects[i].rotationSpeed;
-                
-                // Проверка столкновения с игроком
-                if (
-                    player.x < fallingObjects[i].x + fallingObjects[i].width &&
-                    player.x + player.width > fallingObjects[i].x &&
-                    player.y < fallingObjects[i].y + fallingObjects[i].height &&
-                    player.y + player.height > fallingObjects[i].y
-                ) {
-                    createParticles(fallingObjects[i].x + fallingObjects[i].width/2, 
-                                  fallingObjects[i].y + fallingObjects[i].height/2, 
-                                  fallingObjects[i].color, 20);
-                    fallingObjects.splice(i, 1);
-                    score += 10;
-                    scoreDisplay.textContent = score;
-                    continue;
-                }
-                
-                // Удаление объектов за пределами экрана
-                if (fallingObjects[i].y > canvas.height) {
-                    fallingObjects.splice(i, 1);
-                    lives--;
-                    livesDisplay.textContent = lives;
-                    
-                    if (lives <= 0) {
-                        gameOver();
-                    }
-                }
-            }
-            
-            // Обновление частиц
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].x += particles[i].speedX;
-                particles[i].y += particles[i].speedY;
-                particles[i].life--;
-                
-                if (particles[i].life <= 0) {
-                    particles.splice(i, 1);
-                }
-            }
-            
-            // Движение звезд
-            for (let i = 0; i < stars.length; i++) {
-                stars[i].y += stars[i].speed;
-                if (stars[i].y > canvas.height) {
-                    stars[i].y = 0;
-                    stars[i].x = Math.random() * canvas.width;
-                }
-            }
-        }
+        burstBtn.addEventListener('click', function() {
+            // Создаем салют в центре экрана
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            createHeartBurst(centerX, centerY);
+        });
         
-        // Отрисовка игры
-        function draw() {
-            // Очистка canvas
-            ctx.fillStyle = '#1a1a2e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Рисование звезд
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            for (let i = 0; i < stars.length; i++) {
-                ctx.beginPath();
-                ctx.arc(stars[i].x, stars[i].y, stars[i].size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            // Рисование игрока (платформы)
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            
-            // Добавляем свечение платформе
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            ctx.shadowBlur = 0;
-            
-            // Рисование падающих объектов
-            for (let i = 0; i < fallingObjects.length; i++) {
-                const obj = fallingObjects[i];
-                
-                ctx.save();
-                ctx.translate(obj.x + obj.width/2, obj.y + obj.height/2);
-                ctx.rotate(obj.rotation);
-                
-                ctx.fillStyle = obj.color;
-                
-                // Рисуем разные формы в зависимости от размера
-                if (obj.width > 40) {
-                    // Большие объекты - шестиугольники
-                    ctx.beginPath();
-                    for (let j = 0; j < 6; j++) {
-                        const angle = j * Math.PI / 3;
-                        const x = Math.cos(angle) * obj.width/2;
-                        const y = Math.sin(angle) * obj.width/2;
-                        if (j === 0) {
-                            ctx.moveTo(x, y);
-                        } else {
-                            ctx.lineTo(x, y);
-                        }
-                    }
-                    ctx.closePath();
-                    ctx.fill();
-                } else {
-                    // Маленькие объекты - круги
-                    ctx.beginPath();
-                    ctx.arc(0, 0, obj.width/2, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                
-                ctx.restore();
-                
-                // Добавляем свечение объектам
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = obj.color;
-                ctx.fill();
-                ctx.shadowBlur = 0;
-            }
-            
-            // Рисование частиц
-            for (let i = 0; i < particles.length; i++) {
-                ctx.globalAlpha = particles[i].life / 30;
-                ctx.fillStyle = particles[i].color;
-                ctx.beginPath();
-                ctx.arc(particles[i].x, particles[i].y, particles[i].size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-        }
-        
-        // Игровой цикл
-        function gameLoop() {
-            if (!gameActive) return;
-            
-            update();
-            draw();
-            animationId = requestAnimationFrame(gameLoop);
-        }
-        
-        // Завершение игры
-        function gameOver() {
-            gameActive = false;
-            cancelAnimationFrame(animationId);
-            finalScoreDisplay.textContent = score;
-            gameOverScreen.style.display = 'flex';
-        }
-        
-        // Начало игры
-        function startGame() {
-            startScreen.style.display = 'none';
-            gameOverScreen.style.display = 'none';
-            leaderboardScreen.style.display = 'none';
-            controlChoiceScreen.style.display = 'none';
-            gameActive = true;
-            score = 0;
-            lives = 3;
-            scoreDisplay.textContent = score;
-            livesDisplay.textContent = lives;
-            fallingObjects = [];
-            particles = [];
-            
-            // Обновляем размеры игрока
-            updatePlayerSize();
-            createStars();
-            
-            // Инициализируем управление
-            initControls();
-            
-            // Запуск создания падающих объектов
-            const objectInterval = setInterval(createFallingObject, 1000);
-            
-            // Остановка интервала при завершении игры
-            if (!gameActive) {
-                clearInterval(objectInterval);
-            }
-            
-            // Запуск игрового цикла
-            gameLoop();
-        }
-        
-        // Перезапуск игры
-        function restartGame() {
-            gameOverScreen.style.display = 'none';
-            startGame();
-        }
-        
-        // Показать главное меню
-        function showMainMenu() {
-            gameOverScreen.style.display = 'none';
-            leaderboardScreen.style.display = 'none';
-            controlChoiceScreen.style.display = 'none';
-            startScreen.style.display = 'flex';
-        }
-        
-        // Показать выбор управления
-        function showControlChoice() {
-            startScreen.style.display = 'none';
-            controlChoiceScreen.style.display = 'flex';
-        }
-        
-        // Показать таблицу рейтингов
-        function showLeaderboard() {
-            startScreen.style.display = 'none';
-            gameOverScreen.style.display = 'none';
-            controlChoiceScreen.style.display = 'none';
-            leaderboardScreen.style.display = 'flex';
-            
-            loadLeaderboard();
-        }
-        
-        // Скрыть таблицу рейтингов
-        function hideLeaderboard() {
-            leaderboardScreen.style.display = 'none';
-            startScreen.style.display = 'flex';
-        }
-        
-        // Сохранение результата в Supabase
-        async function saveScoreToSupabase(name, score) {
-            if (!checkInternetConnection()) {
-                leaderboardElement.innerHTML = '<p class="status-message">Нет подключения к интернету</p>';
-                return false;
-            }
-            
-            try {
-                const { data, error } = await supabase
-                    .from('scores')
-                    .insert([{ name, score }]);
-                
-                if (error) throw error;
-                return true;
-            } catch (error) {
-                console.error("Ошибка сохранения в Supabase:", error);
-                leaderboardElement.innerHTML = '<p class="status-message">Ошибка сохранения результата</p>';
-                return false;
-            }
-        }
-        
-        // Загрузка таблицы лидеров из Supabase
-        async function loadLeaderboardFromSupabase() {
-            if (!checkInternetConnection()) {
-                leaderboardElement.innerHTML = '<p class="status-message">Нет подключения к интернету</p>';
-                return;
-            }
-            
-            try {
-                leaderboardElement.innerHTML = '<div class="leaderboard-item">Загрузка результатов...</div>';
-                
-                const { data, error } = await supabase
-                    .from('scores')
-                    .select('*')
-                    .order('score', { ascending: false })
-                    .limit(10);
-                
-                if (error) throw error;
-                
-                if (data && data.length > 0) {
-                    let html = '';
-                    data.forEach((entry, index) => {
-                        html += `
-                            <div class="leaderboard-item">
-                                <span class="leaderboard-rank">${index + 1}.</span>
-                                <span class="leaderboard-name">${entry.name}</span>
-                                <span class="leaderboard-score">${entry.score}</span>
-                            </div>
-                        `;
-                    });
-                    leaderboardElement.innerHTML = html;
-                } else {
-                    leaderboardElement.innerHTML = '<div class="leaderboard-item">Пока нет результатов. Будьте первым!</div>';
-                }
-            } catch (error) {
-                console.error("Ошибка загрузки из Supabase:", error);
-                leaderboardElement.innerHTML = '<div class="leaderboard-item">Ошибка загрузки результатов</div>';
-            }
-        }
-        
-        // Загрузка таблицы рейтингов
-        async function loadLeaderboard() {
-            await loadLeaderboardFromSupabase();
-        }
-        
-        // Сохранение результата
-        async function saveScore() {
-            const name = nameInput.value.trim() || 'Игрок';
-            
-            if (name.length === 0) {
-                alert('Пожалуйста, введите имя');
-                return;
-            }
-            
-            try {
-                const saved = await saveScoreToSupabase(name, score);
-                
-                if (saved) {
-                    alert('Результат сохранен!');
-                    showLeaderboard();
-                } else {
-                    alert('Ошибка сохранения результата. Проверьте подключение к интернету.');
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                alert('Ошибка сохранения результата. Проверьте подключение к интернету.');
-            }
-        }
-        
-        // Инициализация при загрузке
-        window.addEventListener('load', () => {
-            resizeCanvas();
-            updatePlayerSize();
-            createStars();
-            checkInternetConnection();
-            
-            // Автоматически определяем тип управления
-            initControls();
-            
-            // Обработка изменения размера окна
-            window.addEventListener('resize', () => {
-                resizeCanvas();
-                updatePlayerSize();
+        clearBtn.addEventListener('click', function() {
+            // Удаляем все сердечки
+            const hearts = document.querySelectorAll('.heart');
+            hearts.forEach(heart => {
+                heart.remove();
             });
         });
     </script>
 </body>
 </html>
-
