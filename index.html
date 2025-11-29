@@ -1,209 +1,235 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>3D Mobile Game — Single File</title>
-  <style>
-    html,body{height:100%;margin:0;background:#081229;color:#fff;font-family:Inter,system-ui,Arial}
-    #game{width:100%;height:100%;touch-action:none;position:fixed;inset:0}
-    /* HUD */
-    .hud{position:fixed;left:0;right:0;top:0;padding:12px;display:flex;justify-content:space-between;pointer-events:none}
-    .panel{background:rgba(0,0,0,0.25);backdrop-filter:blur(4px);padding:6px 10px;border-radius:10px;font-size:14px}
-    /* simple joystick */
-    .joy-wrap{position:fixed;bottom:20px;left:18px;width:120px;height:120px;pointer-events:auto}
-    .joy-base{position:absolute;inset:0;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center}
-    .joy-stick{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.15);transform:translate(0,0)}
-    /* action buttons */
-    .buttons{position:fixed;right:18px;bottom:20px;pointer-events:auto;display:flex;gap:12px}
-    .btn{width:64px;height:64px;border-radius:18px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;user-select:none}
-    .btn:active{transform:scale(0.96)}
-    /* small help */
-    .help{position:fixed;left:50%;transform:translateX(-50%);bottom:150px;background:rgba(0,0,0,0.25);padding:8px 12px;border-radius:8px;font-size:13px;pointer-events:none}
-    /* responsive tweaks */
-    @media (min-width:600px){.joy-wrap{width:160px;height:160px}.joy-stick{width:64px;height:64px}}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Пародия: "Бойцы на Лужайке" — 2D HTML</title>
+<style>
+  html,body{height:100%;margin:0;background:#0b1220;color:#fff;font-family:Inter,Arial,system-ui}
+  #ui{position:fixed;left:0;right:0;top:0;padding:8px;display:flex;justify-content:space-between;pointer-events:none}
+  #scorePanel{pointer-events:auto;background:rgba(0,0,0,0.35);padding:6px 10px;border-radius:8px;font-size:16px}
+  canvas{display:block;width:100%;height:100%;touch-action:none}
+  .controls{position:fixed;left:12px;bottom:12px;display:flex;gap:8px;pointer-events:auto}
+  .ctl{width:72px;height:72px;border-radius:12px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:26px}
+  .shoot{position:fixed;right:12px;bottom:12px;width:84px;height:84px;border-radius:999px;background:rgba(255,80,80,0.14);display:flex;align-items:center;justify-content:center;font-size:20px;pointer-events:auto}
+  .small{position:fixed;right:12px;top:12px;background:rgba(0,0,0,0.35);padding:6px 8px;border-radius:8px}
+  .hint{position:fixed;left:50%;transform:translateX(-50%);bottom:110px;background:rgba(0,0,0,0.25);padding:8px 12px;border-radius:8px;font-size:13px}
+</style>
 </head>
 <body>
-  <div id="game"></div>
-  <div class="hud">
-    <div class="panel" id="score">Счёт: 0</div>
-    <div class="panel" id="info">Скорость: 1.0x</div>
+  <div id="ui">
+    <div id="scorePanel">Очки: <span id="score">0</span></div>
+    <div class="small" id="time">0s</div>
   </div>
+  <canvas id="game"></canvas>
 
-  <div class="joy-wrap" id="joy">
-    <div class="joy-base"></div>
-    <div class="joy-stick" id="stick"></div>
+  <div class="controls">
+    <div class="ctl" id="left">◀</div>
+    <div class="ctl" id="up">▲</div>
+    <div class="ctl" id="down">▼</div>
+    <div class="ctl" id="right">▶</div>
   </div>
+  <div class="shoot" id="shoot">💥</div>
+  <div class="hint">Пародия "Бойцы на Лужайке" — стреляй в противников, собирай сундуки.</div>
 
-  <div class="buttons">
-    <div class="btn" id="jump">ПРЫГ</div>
-    <div class="btn" id="action">✦</div>
-  </div>
+<script>
+/*
+  Простая 2D пародия, мобильный-ориентированный, single-file.
+  - Движение стрелками (кнопки) — и удержание для движения
+  - Кнопка огня — стреляет пульей
+  - ИИ-противники патрулируют и стреляют
+  - Сундуки (collectibles) дают очки
+  - Дизайн: оригинальные спрайты рисуются на canvas
 
-  <div class="help">Используй джойстик слева для движения, правая кнопка — действия / собирать</div>
+  Авторская заметка: это пародия, не использует оригинальные артифакты/бренды.
+*/
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let W = 1, H = 1;
+  function resize(){
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    W = Math.floor(window.innerWidth * dpr);
+    H = Math.floor(window.innerHeight * dpr);
+    canvas.width = W; canvas.height = H;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
 
-  <!-- три.js из CDN -->
-  <script src="https://unpkg.com/three/build/three.min.js"></script>
-  <script>
-  // Простая мобильная 3D-игра — бесконечный раннер/коллекшн
-  (function(){
-    const container = document.getElementById('game');
-    const scoreEl = document.getElementById('score');
-    const infoEl = document.getElementById('info');
-    let score = 0;
+  // Game world
+  const world = { w: 1200, h: 700 }; // virtual world size; we'll fit to canvas
+  const toScreen = (x,y)=>{
+    // center world in screen
+    const scale = Math.min(window.innerWidth / world.w, window.innerHeight / world.h);
+    const ox = (window.innerWidth - world.w*scale)/2;
+    const oy = (window.innerHeight - world.h*scale)/2;
+    return { x: ox + x*scale, y: oy + y*scale, scale };
+  };
 
-    // Сцена, камера, рендер
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x081229, 0.02);
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
-    camera.position.set(0, 6, 12);
+  // Entities
+  function makePlayer(){ return {
+    x: world.w/2, y: world.h/2, r: 22, angle:0, speed: 220, bullets:[], reload: 0.25, cooldown: 0,
+    color: '#ffcc55', hp: 5
+  }}
+  function makeEnemy(x,y){ return { x,y,r:20,angle:0,speed:100,bullets:[],cooldown:Math.random()*2+1,color:'#66ccff',hp:3,dir:Math.random()*Math.PI*2 } }
+  function makeChest(x,y){ return {x,y,r:14,claimed:false} }
 
-    const renderer = new THREE.WebGLRenderer({antialias:true});
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
+  const player = makePlayer();
+  const enemies = [ makeEnemy(200,150), makeEnemy(900,300), makeEnemy(400,520) ];
+  const chests = [ makeChest(250,350), makeChest(800,180), makeChest(600,420) ];
+  let score = 0; let timeStart = performance.now();
 
-    // light
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x222244, 0.8);
-    scene.add(hemi);
-    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
-    dir.position.set(5,10,5);
-    dir.castShadow = true;
-    scene.add(dir);
+  // UI refs
+  const scoreEl = document.getElementById('score');
+  const timeEl = document.getElementById('time');
 
-    // ground grid
-    const groundMat = new THREE.MeshStandardMaterial({color:0x0d2340, metalness:0.1, roughness:0.8});
-    const groundGeo = new THREE.PlaneGeometry(2000,2000,32,32);
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI/2;
-    ground.position.y = 0;
-    ground.receiveShadow = true;
-    scene.add(ground);
+  // Controls: support pointer hold
+  const state = { left:false, right:false, up:false, down:false, shoot:false };
+  function bindBtn(id, key){
+    const el = document.getElementById(id);
+    el.addEventListener('pointerdown', e=>{ e.preventDefault(); state[key] = true; el.setPointerCapture && el.setPointerCapture(e.pointerId); });
+    el.addEventListener('pointerup', e=>{ e.preventDefault(); state[key] = false; try{ el.releasePointerCapture(e.pointerId); }catch(_){} });
+    el.addEventListener('pointercancel', e=>{ state[key]=false; });
+    // also prevent context menu on long press
+    el.addEventListener('contextmenu', e=>e.preventDefault());
+  }
+  bindBtn('left','left'); bindBtn('right','right'); bindBtn('up','up'); bindBtn('down','down');
+  const shootBtn = document.getElementById('shoot');
+  shootBtn.addEventListener('pointerdown', e=>{ e.preventDefault(); state.shoot = true; shootBtn.setPointerCapture && shootBtn.setPointerCapture(e.pointerId); });
+  shootBtn.addEventListener('pointerup', e=>{ state.shoot = false; try{ shootBtn.releasePointerCapture(e.pointerId); }catch(_){} });
+  shootBtn.addEventListener('pointercancel', e=>{ state.shoot=false; });
 
-    // player
-    const player = new THREE.Group();
-    const boxGeo = new THREE.BoxGeometry(1.4,1.6,1.4);
-    const boxMat = new THREE.MeshStandardMaterial({color:0xff8a50});
-    const body = new THREE.Mesh(boxGeo, boxMat);
-    body.castShadow = true;
-    body.position.y = 1.0;
-    player.add(body);
-    player.position.set(0,0,0);
-    scene.add(player);
+  // helper
+  function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 
-    // collectibles and obstacles
-    const obstacles = [];
-    const collectibles = [];
+  // bullets global array
+  const bullets = [];
 
-    // simple pool factory
-    function makeObstacle(){
-      const g = new THREE.BoxGeometry(1.4 + Math.random()*2, 1 + Math.random()*2, 1.4 + Math.random()*2);
-      const m = new THREE.MeshStandardMaterial({color:0x44aaff*(Math.random()*0.4+0.8)});
-      const mesh = new THREE.Mesh(g,m);
-      mesh.castShadow = true;
-      mesh.position.set((Math.random()-0.5)*6, (g.parameters.height||1)/2, -80 + Math.random()*-200);
-      scene.add(mesh);
-      obstacles.push(mesh);
-    }
-    function makeCollectible(){
-      const g = new THREE.SphereGeometry(0.5,12,12);
-      const m = new THREE.MeshStandardMaterial({emissive:0xffff88, emissiveIntensity:0.8, color:0xffdd55});
-      const mesh = new THREE.Mesh(g,m);
-      mesh.position.set((Math.random()-0.5)*6, 1.2, -80 + Math.random()*-200);
-      scene.add(mesh);
-      collectibles.push(mesh);
-    }
+  function spawnBullet(x,y,angle,owner){ bullets.push({x,y,dx:Math.cos(angle)*620,dy:Math.sin(angle)*620,owner,ttl:2}); }
 
-    // initial world
-    for(let i=0;i<14;i++){ makeObstacle(); if(Math.random()>0.5) makeCollectible(); }
+  // simple collision
+  function circleHit(a,b){ const dx=a.x-b.x, dy=a.y-b.y; const r = (a.r||0)+(b.r||0); return dx*dx+dy*dy <= r*r; }
 
-    // simple movement state — controlled by joystick
-    const state = { x:0, zSpeed:0.8, targetX:0, vy:0, onGround:true };
+  // draw functions (simple shapes)
+  function drawPlayer(p,ctxLocal){ ctxLocal.save(); ctxLocal.translate(p.x,p.y); ctxLocal.rotate(p.angle);
+    ctxLocal.fillStyle = p.color; ctxLocal.beginPath(); ctxLocal.arc(0,0,p.r,0,Math.PI*2); ctxLocal.fill();
+    // eye
+    ctxLocal.fillStyle='#222'; ctxLocal.beginPath(); ctxLocal.arc(p.r*0.4,-p.r*0.25,6,0,Math.PI*2); ctxLocal.fill();
+    // gun barrel
+    ctxLocal.fillStyle='#333'; ctxLocal.fillRect(p.r-4,-6,18,12);
+    ctxLocal.restore(); }
+  function drawEnemy(e,ctxLocal){ ctxLocal.save(); ctxLocal.translate(e.x,e.y); ctxLocal.rotate(e.angle);
+    ctxLocal.fillStyle = e.color; ctxLocal.beginPath(); ctxLocal.arc(0,0,e.r,0,Math.PI*2); ctxLocal.fill();
+    ctxLocal.fillStyle='#111'; ctxLocal.beginPath(); ctxLocal.arc(e.r*0.35,-e.r*0.2,5,0,Math.PI*2); ctxLocal.fill();
+    ctxLocal.restore(); }
+  function drawChest(c,ctxLocal){ ctxLocal.save(); ctxLocal.translate(c.x,c.y);
+    ctxLocal.fillStyle = c.claimed? '#666' : '#aa8833'; ctxLocal.fillRect(-c.r,-c.r,c.r*2,c.r*2);
+    ctxLocal.fillStyle='#333'; ctxLocal.fillRect(-c.r+4,-c.r+6,c.r*2-8,6);
+    ctxLocal.restore(); }
 
-    // joystick handling
-    const joy = document.getElementById('joy');
-    const stick = document.getElementById('stick');
-    let joystickActive = false;
-    let joyCenter = null;
-    function updateStick(pos){
-      const rect = joy.getBoundingClientRect();
-      const cx = rect.left + rect.width/2;
-      const cy = rect.top + rect.height/2;
-      const dx = pos.clientX - cx;
-      const dy = pos.clientY - cy;
-      const max = rect.width/2 - 12;
-      const len = Math.hypot(dx,dy);
-      const nx = (Math.abs(dx) < 8) ? 0 : dx/Math.min(len,max) * Math.min(len,max);
-      const ny = (Math.abs(dy) < 8) ? 0 : dy/Math.min(len,max) * Math.min(len,max);
-      stick.style.transform = `translate(${nx}px, ${ny}px)`;
-      // use dx for left/right
-      state.targetX = Math.max(-3.5, Math.min(3.5, (nx / max) * 3.5));
-      // forward/back could be used, but we'll auto-run forward
-    }
-    function resetStick(){ stick.style.transform='translate(0,0)'; state.targetX=0; }
+  // Tests / assertions — basic runtime checks
+  console.assert(typeof canvas !== 'undefined','Test: canvas exists');
+  console.assert(typeof ctx !== 'undefined','Test: canvas context exists');
+  console.assert(player && enemies.length>0, 'Test: entities created');
 
-    joy.addEventListener('pointerdown', (e)=>{ joystickActive=true; joy.setPointerCapture(e.pointerId); updateStick(e); });
-    joy.addEventListener('pointermove', (e)=>{ if(!joystickActive) return; updateStick(e); });
-    joy.addEventListener('pointerup', (e)=>{ joystickActive=false; joy.releasePointerCapture(e.pointerId); resetStick(); });
-    joy.addEventListener('pointercancel', (e)=>{ joystickActive=false; resetStick(); });
+  // Game loop
+  let last = performance.now();
+  function step(now){
+    const dt = Math.min(0.05,(now-last)/1000); last = now;
+    update(dt); render();
+    requestAnimationFrame(step);
+  }
 
-    // buttons
-    document.getElementById('jump').addEventListener('touchstart', (e)=>{ e.preventDefault(); jump(); });
-    document.getElementById('action').addEventListener('touchstart', (e)=>{ e.preventDefault(); doAction(); });
+  function update(dt){
+    // time
+    const elapsed = Math.floor((nowTime())/1000);
+    timeEl.textContent = elapsed + 's';
 
-    function jump(){ if(state.onGround){ state.vy = 0.18; state.onGround=false; }}
-    function doAction(){ // try pick near collectible
-      for(let i=collectibles.length-1;i>=0;i--){ const c=collectibles[i]; const dx = c.position.x - player.position.x; const dz = c.position.z - player.position.z; const d = Math.hypot(dx,dz); if(d<3){ score+=10; scoreEl.textContent = 'Счёт: '+score; scene.remove(c); collectibles.splice(i,1); }
-      }
-    }
+    // player movement
+    let vx=0, vy=0;
+    if(state.left) vx -= 1; if(state.right) vx +=1; if(state.up) vy -=1; if(state.down) vy +=1;
+    if(vx!==0 || vy!==0){ const len = Math.hypot(vx,vy); vx = vx/len; vy = vy/len; player.x += vx * player.speed * dt; player.y += vy * player.speed * dt; player.angle = Math.atan2(vy,vx); }
+    // clamp
+    player.x = clamp(player.x, 30, world.w-30); player.y = clamp(player.y,30, world.h-30);
 
-    // resize
-    window.addEventListener('resize', ()=>{ camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    // shooting
+    player.cooldown -= dt; if(state.shoot && player.cooldown <= 0){ player.cooldown = player.reload; // spawn bullet from tip of gun
+      const bx = player.x + Math.cos(player.angle)*(player.r+16); const by = player.y + Math.sin(player.angle)*(player.r+16); spawnBullet(bx,by,player.angle,'player'); }
 
-    // main loop
-    let last = performance.now();
-    function spawnIfNeeded(){ if(Math.random() < 0.03) makeObstacle(); if(Math.random() < 0.05) makeCollectible(); }
-
-    function animate(now){
-      const dt = Math.min(0.05, (now-last)/1000); last = now;
-      // move player toward targetX smoothly
-      const dx = state.targetX - player.position.x;
-      player.position.x += dx * Math.min(1, 8*dt);
-
-      // forward movement (we keep world moving towards camera: move obstacles/collectibles)
-      const moveZ = state.zSpeed * dt * 40; // world speed multiplier
-      for(const o of obstacles){ o.position.z += moveZ; if(o.position.z > 10) { scene.remove(o); } }
-      for(const c of collectibles){ c.position.z += moveZ; if(c.position.z > 10) { scene.remove(c); } }
-      // cleanup arrays
-      for(let i=obstacles.length-1;i>=0;i--) if(obstacles[i].position.z > 10) obstacles.splice(i,1);
-      for(let i=collectibles.length-1;i>=0;i--) if(collectibles[i].position.z > 10) collectibles.splice(i,1);
-
-      // gravity
-      state.vy -= 0.6 * dt; player.position.y += state.vy; if(player.position.y <= 0){ player.position.y = 0; state.vy = 0; state.onGround = true; }
-
-      // camera follows player
-      camera.position.x += (player.position.x - camera.position.x) * 6 * dt;
-      camera.position.z += ((player.position.z + 12) - camera.position.z) * 2 * dt;
-      camera.lookAt(player.position.x, player.position.y+1.5, player.position.z - 6);
-
-      // collisions with obstacles
-      for(let i=obstacles.length-1;i>=0;i--){ const o=obstacles[i]; const dx = o.position.x - player.position.x; const dz = o.position.z - player.position.z; const d = Math.hypot(dx,dz); if(d < 1.6 + (o.geometry.parameters.width||1)/2){ // simple hit
-          // bounce back
-          state.targetX = 0; score = Math.max(0, score - 5); scoreEl.textContent = 'Счёт: '+score; // knock obstacle away
-          o.position.z += 30;
+    // bullets update
+    for(let i=bullets.length-1;i>=0;i--){ const b = bullets[i]; b.x += b.dx*dt; b.y += b.dy*dt; b.ttl -= dt; if(b.ttl<=0 || b.x<0 || b.x>world.w || b.y<0 || b.y>world.h){ bullets.splice(i,1); continue; }
+      // collisions
+      if(b.owner==='player'){
+        for(let j=enemies.length-1;j>=0;j--){ const e=enemies[j]; if(circleHit({x:b.x,y:b.y,r:6}, e)){ e.hp -=1; bullets.splice(i,1); if(e.hp<=0){ score += 20; scoreEl.textContent = score; enemies.splice(j,1); } break; } }
+      } else {
+        if(circleHit({x:b.x,y:b.y,r:6}, player)){
+          player.hp -=1; bullets.splice(i,1); if(player.hp<=0){ // game over reset
+            resetGame(); return; }
         }
       }
+    }
 
-      // collect automatic proximity
-      for(let i=collectibles.length-1;i>=0;i--){ const c=collectibles[i]; const dx = c.position.x - player.position.x; const dz = c.position.z - player.position.z; const d = Math.hypot(dx,dz); if(d<2.0){ score+=5; scoreEl.textContent='Счёт: '+score; scene.remove(c); collectibles.splice(i,1); }}
+    // enemies AI: simple wander + occasional shoot
+    for(const e of enemies){
+      e.dir += (Math.random()-0.5)*0.5*dt; e.x += Math.cos(e.dir)*e.speed*dt; e.y += Math.sin(e.dir)*e.speed*dt;
+      e.x = clamp(e.x,30,world.w-30); e.y = clamp(e.y,30,world.h-30);
+      // face player
+      const ang = Math.atan2(player.y - e.y, player.x - e.x); e.angle = ang;
+      e.cooldown = (e.cooldown||0) - dt;
+      if(e.cooldown <= 0){ e.cooldown = Math.random()*2+1; // shoot at player
+        const bx = e.x + Math.cos(ang)*(e.r+12); const by = e.y + Math.sin(ang)*(e.r+12); spawnBullet(bx,by,ang,'enemy'); }
+    }
 
-      // spawn
-      spawnIfNeeded();
+    // chests
+    for(let i=chests.length-1;i>=0;i--){ const c = chests[i]; if(!c.claimed && circleHit(player,c)){ c.claimed = true; score += 10; scoreEl.textContent = score; } }
 
-      // small speed-up over time
-      state.zSpeed += 0.0002 * dt*100; infoEl.textContent = 'Скорость: '+(Math.round(state.zSpeed*100)/100)+'x';
+    // small respawn logic
+    if(enemies.length < 2 && Math.random() < 0.02){ enemies.push(makeEnemy(Math.random()*(world.w-200)+100, Math.random()*(world.h-200)+100)); }
+  }
+
+  function render(){
+    // clear
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // draw background grass (pattern)
+    const grad = ctx.createLinearGradient(0,0,0,window.innerHeight); grad.addColorStop(0,'#083020'); grad.addColorStop(1,'#0b2b1a'); ctx.fillStyle = grad; ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
+
+    // compute scale and offset
+    const scale = Math.min(window.innerWidth/world.w, window.innerHeight/world.h);
+    const ox = (window.innerWidth - world.w*scale)/2;
+    const oy = (window.innerHeight - world.h*scale)/2;
+
+    ctx.save(); ctx.translate(ox,oy); ctx.scale(scale,scale);
+
+    // draw chests
+    for(const c of chests){ drawChest(c,ctx); }
+    // draw enemies
+    for(const e of enemies){ drawEnemy(e,ctx); }
+    // draw player
+    drawPlayer(player,ctx);
+    // draw bullets
+    for(const b of bullets){ ctx.fillStyle = (b.owner==='player')? '#ffd866' : '#88d2ff'; ctx.beginPath(); ctx.arc(b.x,b.y,6,0,Math.PI*2); ctx.fill(); }
+
+    ctx.restore();
+  }
+
+  function nowTime(){ return (performance.now() - timeStart)/1000; }
+
+  function resetGame(){ score = 0; scoreEl.textContent = score; player.x = world.w/2; player.y = world.h/2; player.hp = 5; enemies.length = 0; enemies.push(makeEnemy(200,150)); enemies.push(makeEnemy(900,300)); chests.forEach(c=>c.claimed=false); bullets.length = 0; }
+
+  // start loop
+  requestAnimationFrame(step);
+
+  // expose for debugging
+  window.__PARODY = { player, enemies, chests, bullets, resetGame };
+
+})();
+</script>
+</body>
+</html>
+d*100)/100)+'x';
 
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
@@ -232,3 +258,4 @@
   </script>
 </body>
 </html>
+
