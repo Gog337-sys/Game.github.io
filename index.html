@@ -1,229 +1,234 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Волшебные сердечки для телефона</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            touch-action: manipulation;
-            padding: 20px;
-        }
-        
-        .container {
-            text-align: center;
-            z-index: 10;
-            max-width: 90%;
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            text-shadow: 0 0 10px rgba(255, 105, 180, 0.7);
-        }
-        
-        p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            line-height: 1.5;
-        }
-        
-        .instructions {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 15px;
-            margin-bottom: 2rem;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .heart {
-            position: absolute;
-            pointer-events: none;
-            animation: float 2.5s ease-in forwards;
-            z-index: 5;
-            user-select: none;
-        }
-        
-        @keyframes float {
-            0% {
-                transform: translateY(0) rotate(0deg) scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-100px) rotate(360deg) scale(1.5);
-                opacity: 0;
-            }
-        }
-        
-        .controls {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        button {
-            background: linear-gradient(45deg, #ff2975, #ff8fa3);
-            border: none;
-            padding: 12px 20px;
-            border-radius: 50px;
-            color: white;
-            font-size: 1rem;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
-            transition: all 0.3s ease;
-            font-weight: bold;
-        }
-        
-        button:active {
-            transform: scale(0.95);
-            box-shadow: 0 2px 8px rgba(255, 105, 180, 0.6);
-        }
-        
-        .footer {
-            position: absolute;
-            bottom: 20px;
-            text-align: center;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        /* Адаптивность для очень маленьких экранов */
-        @media (max-width: 400px) {
-            h1 {
-                font-size: 2rem;
-            }
-            
-            p {
-                font-size: 1rem;
-            }
-            
-            button {
-                padding: 10px 16px;
-                font-size: 0.9rem;
-            }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>3D Mobile Game — Single File</title>
+  <style>
+    html,body{height:100%;margin:0;background:#081229;color:#fff;font-family:Inter,system-ui,Arial}
+    #game{width:100%;height:100%;touch-action:none;position:fixed;inset:0}
+    /* HUD */
+    .hud{position:fixed;left:0;right:0;top:0;padding:12px;display:flex;justify-content:space-between;pointer-events:none}
+    .panel{background:rgba(0,0,0,0.25);backdrop-filter:blur(4px);padding:6px 10px;border-radius:10px;font-size:14px}
+    /* simple joystick */
+    .joy-wrap{position:fixed;bottom:20px;left:18px;width:120px;height:120px;pointer-events:auto}
+    .joy-base{position:absolute;inset:0;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center}
+    .joy-stick{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.15);transform:translate(0,0)}
+    /* action buttons */
+    .buttons{position:fixed;right:18px;bottom:20px;pointer-events:auto;display:flex;gap:12px}
+    .btn{width:64px;height:64px;border-radius:18px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;user-select:none}
+    .btn:active{transform:scale(0.96)}
+    /* small help */
+    .help{position:fixed;left:50%;transform:translateX(-50%);bottom:150px;background:rgba(0,0,0,0.25);padding:8px 12px;border-radius:8px;font-size:13px;pointer-events:none}
+    /* responsive tweaks */
+    @media (min-width:600px){.joy-wrap{width:160px;height:160px}.joy-stick{width:64px;height:64px}}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>✨ Волшебные сердечки ✨</h1>
-        
-        <div class="instructions">
-            <p>Коснитесь экрана в любом месте, чтобы создать красивые сердечки!</p>
-            <p>Используйте кнопки ниже для разных эффектов</p>
-        </div>
-        
-        <div class="controls">
-            <button id="single">Одно сердечко</button>
-            <button id="burst">Салют сердечек</button>
-            <button id="clear">Очистить экран</button>
-        </div>
-    </div>
-    
-    <div class="footer">
-        Создано с ❤️ для мобильных устройств
-    </div>
+  <div id="game"></div>
+  <div class="hud">
+    <div class="panel" id="score">Счёт: 0</div>
+    <div class="panel" id="info">Скорость: 1.0x</div>
+  </div>
 
-    <script>
-        // Получаем элементы кнопок
-        const singleBtn = document.getElementById('single');
-        const burstBtn = document.getElementById('burst');
-        const clearBtn = document.getElementById('clear');
-        
-        // Обработчик для одиночного сердечка
-        function createHeart(x, y) {
-            const heart = document.createElement('div');
-            heart.className = 'heart';
-            heart.innerHTML = '❤️';
-            
-            // Позиционируем сердечко
-            heart.style.left = x + 'px';
-            heart.style.top = y + 'px';
-            
-            // Случайный размер
-            const size = Math.random() * 30 + 20;
-            heart.style.fontSize = size + 'px';
-            
-            // Случайный цвет
-            const colors = ['#ff2975', '#fee800', '#04fc43', '#00b7ff', '#ff00ff'];
-            heart.style.color = colors[Math.floor(Math.random() * colors.length)];
-            
-            // Случайная задержка анимации
-            heart.style.animationDelay = Math.random() * 0.5 + 's';
-            
-            document.body.appendChild(heart);
-            
-            // Удаляем элемент после анимации
-            setTimeout(() => {
-                if (heart.parentNode) {
-                    heart.remove();
-                }
-            }, 2500);
+  <div class="joy-wrap" id="joy">
+    <div class="joy-base"></div>
+    <div class="joy-stick" id="stick"></div>
+  </div>
+
+  <div class="buttons">
+    <div class="btn" id="jump">ПРЫГ</div>
+    <div class="btn" id="action">✦</div>
+  </div>
+
+  <div class="help">Используй джойстик слева для движения, правая кнопка — действия / собирать</div>
+
+  <!-- три.js из CDN -->
+  <script src="https://unpkg.com/three/build/three.min.js"></script>
+  <script>
+  // Простая мобильная 3D-игра — бесконечный раннер/коллекшн
+  (function(){
+    const container = document.getElementById('game');
+    const scoreEl = document.getElementById('score');
+    const infoEl = document.getElementById('info');
+    let score = 0;
+
+    // Сцена, камера, рендер
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x081229, 0.02);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
+    camera.position.set(0, 6, 12);
+
+    const renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    // light
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x222244, 0.8);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+    dir.position.set(5,10,5);
+    dir.castShadow = true;
+    scene.add(dir);
+
+    // ground grid
+    const groundMat = new THREE.MeshStandardMaterial({color:0x0d2340, metalness:0.1, roughness:0.8});
+    const groundGeo = new THREE.PlaneGeometry(2000,2000,32,32);
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI/2;
+    ground.position.y = 0;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // player
+    const player = new THREE.Group();
+    const boxGeo = new THREE.BoxGeometry(1.4,1.6,1.4);
+    const boxMat = new THREE.MeshStandardMaterial({color:0xff8a50});
+    const body = new THREE.Mesh(boxGeo, boxMat);
+    body.castShadow = true;
+    body.position.y = 1.0;
+    player.add(body);
+    player.position.set(0,0,0);
+    scene.add(player);
+
+    // collectibles and obstacles
+    const obstacles = [];
+    const collectibles = [];
+
+    // simple pool factory
+    function makeObstacle(){
+      const g = new THREE.BoxGeometry(1.4 + Math.random()*2, 1 + Math.random()*2, 1.4 + Math.random()*2);
+      const m = new THREE.MeshStandardMaterial({color:0x44aaff*(Math.random()*0.4+0.8)});
+      const mesh = new THREE.Mesh(g,m);
+      mesh.castShadow = true;
+      mesh.position.set((Math.random()-0.5)*6, (g.parameters.height||1)/2, -80 + Math.random()*-200);
+      scene.add(mesh);
+      obstacles.push(mesh);
+    }
+    function makeCollectible(){
+      const g = new THREE.SphereGeometry(0.5,12,12);
+      const m = new THREE.MeshStandardMaterial({emissive:0xffff88, emissiveIntensity:0.8, color:0xffdd55});
+      const mesh = new THREE.Mesh(g,m);
+      mesh.position.set((Math.random()-0.5)*6, 1.2, -80 + Math.random()*-200);
+      scene.add(mesh);
+      collectibles.push(mesh);
+    }
+
+    // initial world
+    for(let i=0;i<14;i++){ makeObstacle(); if(Math.random()>0.5) makeCollectible(); }
+
+    // simple movement state — controlled by joystick
+    const state = { x:0, zSpeed:0.8, targetX:0, vy:0, onGround:true };
+
+    // joystick handling
+    const joy = document.getElementById('joy');
+    const stick = document.getElementById('stick');
+    let joystickActive = false;
+    let joyCenter = null;
+    function updateStick(pos){
+      const rect = joy.getBoundingClientRect();
+      const cx = rect.left + rect.width/2;
+      const cy = rect.top + rect.height/2;
+      const dx = pos.clientX - cx;
+      const dy = pos.clientY - cy;
+      const max = rect.width/2 - 12;
+      const len = Math.hypot(dx,dy);
+      const nx = (Math.abs(dx) < 8) ? 0 : dx/Math.min(len,max) * Math.min(len,max);
+      const ny = (Math.abs(dy) < 8) ? 0 : dy/Math.min(len,max) * Math.min(len,max);
+      stick.style.transform = `translate(${nx}px, ${ny}px)`;
+      // use dx for left/right
+      state.targetX = Math.max(-3.5, Math.min(3.5, (nx / max) * 3.5));
+      // forward/back could be used, but we'll auto-run forward
+    }
+    function resetStick(){ stick.style.transform='translate(0,0)'; state.targetX=0; }
+
+    joy.addEventListener('pointerdown', (e)=>{ joystickActive=true; joy.setPointerCapture(e.pointerId); updateStick(e); });
+    joy.addEventListener('pointermove', (e)=>{ if(!joystickActive) return; updateStick(e); });
+    joy.addEventListener('pointerup', (e)=>{ joystickActive=false; joy.releasePointerCapture(e.pointerId); resetStick(); });
+    joy.addEventListener('pointercancel', (e)=>{ joystickActive=false; resetStick(); });
+
+    // buttons
+    document.getElementById('jump').addEventListener('touchstart', (e)=>{ e.preventDefault(); jump(); });
+    document.getElementById('action').addEventListener('touchstart', (e)=>{ e.preventDefault(); doAction(); });
+
+    function jump(){ if(state.onGround){ state.vy = 0.18; state.onGround=false; }}
+    function doAction(){ // try pick near collectible
+      for(let i=collectibles.length-1;i>=0;i--){ const c=collectibles[i]; const dx = c.position.x - player.position.x; const dz = c.position.z - player.position.z; const d = Math.hypot(dx,dz); if(d<3){ score+=10; scoreEl.textContent = 'Счёт: '+score; scene.remove(c); collectibles.splice(i,1); }
+      }
+    }
+
+    // resize
+    window.addEventListener('resize', ()=>{ camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+    // main loop
+    let last = performance.now();
+    function spawnIfNeeded(){ if(Math.random() < 0.03) makeObstacle(); if(Math.random() < 0.05) makeCollectible(); }
+
+    function animate(now){
+      const dt = Math.min(0.05, (now-last)/1000); last = now;
+      // move player toward targetX smoothly
+      const dx = state.targetX - player.position.x;
+      player.position.x += dx * Math.min(1, 8*dt);
+
+      // forward movement (we keep world moving towards camera: move obstacles/collectibles)
+      const moveZ = state.zSpeed * dt * 40; // world speed multiplier
+      for(const o of obstacles){ o.position.z += moveZ; if(o.position.z > 10) { scene.remove(o); } }
+      for(const c of collectibles){ c.position.z += moveZ; if(c.position.z > 10) { scene.remove(c); } }
+      // cleanup arrays
+      for(let i=obstacles.length-1;i>=0;i--) if(obstacles[i].position.z > 10) obstacles.splice(i,1);
+      for(let i=collectibles.length-1;i>=0;i--) if(collectibles[i].position.z > 10) collectibles.splice(i,1);
+
+      // gravity
+      state.vy -= 0.6 * dt; player.position.y += state.vy; if(player.position.y <= 0){ player.position.y = 0; state.vy = 0; state.onGround = true; }
+
+      // camera follows player
+      camera.position.x += (player.position.x - camera.position.x) * 6 * dt;
+      camera.position.z += ((player.position.z + 12) - camera.position.z) * 2 * dt;
+      camera.lookAt(player.position.x, player.position.y+1.5, player.position.z - 6);
+
+      // collisions with obstacles
+      for(let i=obstacles.length-1;i>=0;i--){ const o=obstacles[i]; const dx = o.position.x - player.position.x; const dz = o.position.z - player.position.z; const d = Math.hypot(dx,dz); if(d < 1.6 + (o.geometry.parameters.width||1)/2){ // simple hit
+          // bounce back
+          state.targetX = 0; score = Math.max(0, score - 5); scoreEl.textContent = 'Счёт: '+score; // knock obstacle away
+          o.position.z += 30;
         }
-        
-        // Обработчик для салюта сердечек
-        function createHeartBurst(x, y) {
-            for (let i = 0; i < 15; i++) {
-                setTimeout(() => {
-                    const offsetX = (Math.random() - 0.5) * 100;
-                    const offsetY = (Math.random() - 0.5) * 100;
-                    createHeart(x + offsetX, y + offsetY);
-                }, i * 100);
-            }
-        }
-        
-        // Обработчик касаний
-        document.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            createHeart(touch.clientX, touch.clientY);
-        });
-        
-        // Обработчик кликов (для тестирования на ПК)
-        document.addEventListener('click', function(e) {
-            createHeart(e.clientX, e.clientY);
-        });
-        
-        // Обработчики кнопок
-        singleBtn.addEventListener('click', function() {
-            // Создаем сердечко в центре экрана
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-            createHeart(centerX, centerY);
-        });
-        
-        burstBtn.addEventListener('click', function() {
-            // Создаем салют в центре экрана
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-            createHeartBurst(centerX, centerY);
-        });
-        
-        clearBtn.addEventListener('click', function() {
-            // Удаляем все сердечки
-            const hearts = document.querySelectorAll('.heart');
-            hearts.forEach(heart => {
-                heart.remove();
-            });
-        });
-    </script>
+      }
+
+      // collect automatic proximity
+      for(let i=collectibles.length-1;i>=0;i--){ const c=collectibles[i]; const dx = c.position.x - player.position.x; const dz = c.position.z - player.position.z; const d = Math.hypot(dx,dz); if(d<2.0){ score+=5; scoreEl.textContent='Счёт: '+score; scene.remove(c); collectibles.splice(i,1); }}
+
+      // spawn
+      spawnIfNeeded();
+
+      // small speed-up over time
+      state.zSpeed += 0.0002 * dt*100; infoEl.textContent = 'Скорость: '+(Math.round(state.zSpeed*100)/100)+'x';
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+
+    // Helpful: allow tap-to-teleport lateral for quick testing on desktop
+    renderer.domElement.addEventListener('click', (e)=>{
+      const nx = (e.clientX / window.innerWidth) * 2 - 1;
+      state.targetX = Math.max(-3.5, Math.min(3.5, nx * 4));
+    });
+
+    // Simple orient hint: tilt device to look around
+    if(window.DeviceOrientationEvent){ window.addEventListener('deviceorientation', (ev)=>{
+      if(ev.gamma!=null){ camera.rotation.z = THREE.MathUtils.degToRad(ev.gamma*0.07); }
+    }); }
+
+    // touch jump on double-tap
+    let lastTap = 0;
+    renderer.domElement.addEventListener('touchend', (e)=>{ const t = performance.now(); if(t - lastTap < 300) jump(); lastTap = t; });
+
+    // expose debug for console tweaking
+    window.__GAME = { scene, player, obstacles, collectibles };
+
+  })();
+  </script>
 </body>
 </html>
