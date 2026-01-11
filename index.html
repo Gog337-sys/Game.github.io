@@ -1,825 +1,375 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Подштаники — HTML версия</title>
-<style>
-  :root{
-    --bg:#0b1020;
-    --panel:#101726;
-    --accent:#60a8ff;
-    --good:#6ee07a;
-    --bad:#ff6b6b;
-    --muted:#9aa3b2;
-  }
-  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, "Segoe UI", Roboto, Arial;}
-  #game-wrap{display:flex;align-items:center;justify-content:center;height:100%;}
-  #canvas{background:#1b2333;border-radius:8px;box-shadow:0 6px 30px rgba(0,0,0,.7);display:block;}
-  /* HUD & overlays */
-  .overlay{
-    position:fixed;left:0;right:0;top:0;bottom:0;pointer-events:none;
-  }
-  .ui{
-    position:fixed;left:12px;top:12px;color:#fff;pointer-events:none;
-  }
-  .ui .row{margin-bottom:6px;display:flex;gap:10px;align-items:center;}
-  .bar{
-    height:12px;background:#222;border-radius:6px;width:220px;overflow:hidden;border:1px solid rgba(255,255,255,.06);
-  }
-  .bar > i{display:block;height:100%;background:var(--accent);width:0%;}
-  .bar.hp>i{background:linear-gradient(90deg,var(--good),#e6ffdd);}
-  .bar.stam>i{background:linear-gradient(90deg,#ffd36b,#ffb86b);}
-  .bar.ultra>i{background:linear-gradient(90deg,#d09bff,#8e6bff);}
-  .text{font-size:14px;color:var(--muted);pointer-events:none;}
-  /* Center overlays (menu/shop) */
-  .panel{
-    position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
-    background:var(--panel);color:#fff;padding:18px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.7);
-    width:720px;max-width:92%;pointer-events:auto;
-  }
-  .menu h1{margin:0 0 12px 0;font-size:34px}
-  .menu .btn{display:inline-block;padding:10px 18px;background:var(--accent);color:#031224;border-radius:8px;margin:6px 6px 0 0;cursor:pointer}
-  .menu .btn.red{background:var(--bad);color:#fff}
-  .shop .items{display:flex;flex-wrap:wrap;gap:10px}
-  .shop .item{flex:1 1 48%;background:#0f1620;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.04)}
-  .shop .item h3{margin:0 0 6px 0;font-size:16px}
-  .shop .item p{margin:0 0 10px 0;color:var(--muted);font-size:13px}
-  .shop .buy{background:var(--accent);color:#051025;padding:6px 10px;border-radius:6px;cursor:pointer}
-  .hud-right{position:fixed;right:12px;top:12px;color:#fff;text-align:right}
-  .notif{position:fixed;left:50%;transform:translateX(-50%);top:18px;background:#0e2a14;color:#e9ffec;padding:10px 18px;border-radius:8px;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.5)}
-  .footer-hint{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);color:var(--muted);font-size:13px}
-  /* level buttons */
-  .levels{display:flex;flex-wrap:wrap;gap:10px}
-  .levels button{padding:8px 12px;border-radius:8px;background:#16202a;border:1px solid rgba(255,255,255,.03);color:#fff;cursor:pointer}
-  .levels button.locked{opacity:.35;cursor:not-allowed}
-  /* small info */
-  .weapon-list{display:flex;gap:8px;align-items:center}
-  .weapon{padding:6px 8px;background:#0b1220;border-radius:6px;border:1px solid rgba(255,255,255,.03);font-size:13px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажёр физических формул</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
 </head>
 <body>
-<div id="game-wrap">
-  <canvas id="canvas" width="960" height="540"></canvas>
-</div>
+    <div class="container">
+        <!-- Заголовок -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-atom"></i>
+                <h1>Тренажёр физических формул</h1>
+            </div>
+            <div class="user-info">
+                <div class="user-name" id="userNameDisplay">Гость</div>
+                <button class="btn-icon" id="changeUserBtn" title="Сменить имя">
+                    <i class="fas fa-user-edit"></i>
+                </button>
+            </div>
+        </header>
 
-<!-- HUD -->
-<div class="ui">
-  <div class="row"><div class="text">Уровень:</div><div id="ui-level" class="text">1</div></div>
-  <div class="row"><div class="text">Убийств:</div><div id="ui-kills" class="text">0</div></div>
-  <div class="row">
-    <div class="text">HP</div>
-    <div class="bar hp" style="width:260px"><i id="hp-bar" style="width:100%"></i></div>
-    <div id="hp-text" class="text">100/100</div>
-  </div>
-  <div class="row">
-    <div class="text">Стамина</div>
-    <div class="bar stam"><i id="stam-bar" style="width:100%"></i></div>
-    <div id="stam-text" class="text">100</div>
-  </div>
-  <div class="row">
-    <div class="text">УЛЬТА</div>
-    <div class="bar ultra"><i id="ultra-bar" style="width:0%"></i></div>
-    <div id="ultra-text" class="text">0%</div>
-  </div>
-</div>
+        <!-- Главное меню -->
+        <section class="menu-section" id="mainMenu">
+            <div class="menu-cards">
+                <div class="menu-card" id="startTestBtn">
+                    <div class="menu-icon">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <h3>Начать тестирование</h3>
+                    <p>Проверьте свои знания физических формул</p>
+                </div>
 
-<div class="hud-right">
-  <div class="text">Оружие: <span id="ui-weapon">Пистолет</span></div>
-  <div class="text">Монеты: <span id="ui-coins">0</span></div>
-</div>
+                <div class="menu-card" id="addFormulaBtn">
+                    <div class="menu-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <h3>Добавить формулу</h3>
+                    <p>Добавьте свою формулу для изучения</p>
+                </div>
 
-<div id="notif" class="notif" style="display:none"></div>
-<div class="footer-hint">WASD — движение · Shift — спринт · Мышь — прицел/стрельба · 1–4 — смена оружия · Q — ульта · P — пауза</div>
+                <div class="menu-card" id="viewFormulasBtn">
+                    <div class="menu-icon">
+                        <i class="fas fa-list-alt"></i>
+                    </div>
+                    <h3>Все формулы</h3>
+                    <p>Просмотр всех доступных формул</p>
+                </div>
 
-<!-- Panels -->
-<div id="menu" class="panel menu" style="display:none;pointer-events:auto;">
-  <h1>ПОДШТАНИКИ (HTML)</h1>
-  <div style="display:flex;gap:12px;align-items:center;">
-    <div class="btn" id="btn-start">Начать игру</div>
-    <div class="btn" id="btn-levels">Выбор уровня</div>
-    <div class="btn red" id="btn-exit">Выход</div>
-  </div>
-  <p style="color:var(--muted);margin-top:10px">Сохранение прогресса в браузере (localStorage).</p>
-  <div style="margin-top:12px">Разработано — порт с Pygame.</div>
-</div>
+                <div class="menu-card" id="statisticsBtn">
+                    <div class="menu-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3>Статистика</h3>
+                    <p>Результаты ваших тестирований</p>
+                </div>
+            </div>
+        </section>
 
-<div id="level-select" class="panel" style="display:none;">
-  <h2>Выбор уровня</h2>
-  <div class="levels" id="levels-container"></div>
-  <div style="margin-top:12px"><div class="btn" id="btn-back-levels">Назад</div></div>
-</div>
+        <!-- Окно тестирования -->
+        <section class="test-section hidden" id="testSection">
+            <div class="test-header">
+                <h2><i class="fas fa-clipboard-check"></i> Тестирование</h2>
+                <button class="btn-secondary" id="backToMenuBtn">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </button>
+            </div>
 
-<div id="shop" class="panel shop" style="display:none;">
-  <h2>МАГАЗИН</h2>
-  <div class="items" id="shop-items"></div>
-  <div style="margin-top:12px"><div class="btn" id="btn-close-shop">Закрыть</div></div>
-</div>
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span id="currentQuestion">1</span> из <span id="totalQuestions">10</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
 
-<script>
-/*
-  Полный игровой движок в одной странице.
-  Поддерживает:
-  - Игрок с HP, стаминой, спринтом
-  - Оружия: pistol, shotgun, rifle(авто), rocket
-  - Враги (normal, fast, tank), волны, босс
-  - Магазин между уровнями
-  - Ульта (Q) — луч, наносит урон во время активности
-  - Сохранение в localStorage
-*/
+            <div class="question-card">
+                <h3 id="formulaName">Название формулы</h3>
+                <div class="formula-input-container">
+                    <input type="text" id="formulaInput" placeholder="Введите формулу (например: F = m * a)" autocomplete="off">
+                    <div class="hint">Используйте * для умножения, / для деления, ^ для степени</div>
+                </div>
+                
+                <div class="buttons-container">
+                    <button class="btn" id="checkAnswerBtn">
+                        <i class="fas fa-check"></i> Проверить
+                    </button>
+                    <button class="btn-secondary" id="skipQuestionBtn">
+                        <i class="fas fa-forward"></i> Пропустить
+                    </button>
+                </div>
 
-// ------------ Конфигурация ------------
-const CONFIG = {
-  BASE_W: 960, BASE_H: 540,
-  FPS: 60,
-  SCALE: 1, // canvas уже настроен
-  COLORS: {
-    bg:'#141823', player:'#0ea5ff', enemy:'#ffb86b', fast:'#ff6b6b', tank:'#6ee07a'
-  }
-};
+                <div class="result-container hidden" id="resultContainer">
+                    <div class="result-message" id="resultMessage"></div>
+                    <div class="correct-answer hidden" id="correctAnswerContainer">
+                        Правильный ответ: <span id="correctAnswer"></span>
+                    </div>
+                    <button class="btn" id="nextQuestionBtn">
+                        <i class="fas fa-arrow-right"></i> Следующий вопрос
+                    </button>
+                </div>
+            </div>
 
-// ------------ Утилиты ------------
-function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
-function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
-function dist(x1,y1,x2,y2){return Math.hypot(x2-x1,y2-y1);}
+            <div class="score-board hidden" id="scoreBoard">
+                <h3><i class="fas fa-trophy"></i> Результаты теста</h3>
+                <div class="score-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">Правильно:</div>
+                        <div class="stat-value correct" id="correctCount">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Неправильно:</div>
+                        <div class="stat-value incorrect" id="incorrectCount">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Пропущено:</div>
+                        <div class="stat-value skipped" id="skippedCount">0</div>
+                    </div>
+                    <div class="stat-item total">
+                        <div class="stat-label">Всего:</div>
+                        <div class="stat-value" id="totalCount">0</div>
+                    </div>
+                </div>
+                <div class="percentage" id="percentage">0%</div>
+                <div class="grade" id="grade">Оценка: -</div>
+                <button class="btn" id="finishTestBtn">
+                    <i class="fas fa-home"></i> Вернуться в меню
+                </button>
+            </div>
+        </section>
 
-// ------------ Состояние игры ------------
-let G = {
-  canvas:null, ctx:null, w:CONFIG.BASE_W, h:CONFIG.BASE_H,
-  running:true, paused:false,
-  gameState:'menu', // menu, playing, shop, level_select, game_over, victory, paused
-  level:1, unlockedLevels:1,
-  enemies:[], bullets:[], explosions:[],
-  boss:null, enemiesKilled:0, wave:0,
-  enemiesToSpawn:0, spawnTimer:0, spawnDelay:40, enemyTypes:[],
-  player:null, weaponSystem:null, ultra:null,
-  notifications:[],
-  coins:0
-};
+        <!-- Окно добавления формулы -->
+        <section class="add-formula-section hidden" id="addFormulaSection">
+            <div class="test-header">
+                <h2><i class="fas fa-plus-circle"></i> Добавить новую формулу</h2>
+                <button class="btn-secondary" id="backFromAddBtn">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </button>
+            </div>
 
-// ------------ Input ------------
-const Input = {
-  keys: {},
-  mouse: {x:0,y:0,down:false},
-};
-window.addEventListener('keydown', e=>{Input.keys[e.key.toLowerCase()]=true; if(e.key==='Escape'){ if(G.gameState==='playing'){G.paused=!G.paused;}}});
-window.addEventListener('keyup', e=>{Input.keys[e.key.toLowerCase()]=false;});
-window.addEventListener('mousemove', e=>{
-  const rect = G.canvas.getBoundingClientRect();
-  Input.mouse.x = (e.clientX - rect.left);
-  Input.mouse.y = (e.clientY - rect.top);
-});
-window.addEventListener('mousedown', e=>{ if(e.button===0) Input.mouse.down=true; });
-window.addEventListener('mouseup', e=>{ if(e.button===0) Input.mouse.down=false; });
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="newFormulaName">
+                        <i class="fas fa-heading"></i> Название формулы
+                    </label>
+                    <input type="text" id="newFormulaName" placeholder="Например: Второй закон Ньютона">
+                </div>
 
-// ------------ Player ------------
-class Player {
-  constructor(x,y){
-    this.x = x; this.y = y;
-    this.w = 40; this.h = 40;
-    this.speed = 3;
-    this.baseSpeed = this.speed;
-    this.sprintSpeed = this.baseSpeed * 1.8;
-    this.stamina = 100; this.maxStam = 100;
-    this.stamRecovery = 0.7; this.stamDrain = 1.3;
-    this.isSprinting = false;
-    this.health = 100; this.maxHealth = 100;
-    this.coins = 0;
-    this.hitCooldown = 0;
-  }
-  center(){ return {x:this.x+this.w/2, y:this.y+this.h/2}; }
-  update(){
-    // sprint
-    if((Input.keys['shift'] || Input.keys['shiftleft']||Input.keys['shiftright']) && this.stamina>0) this.isSprinting=true; else this.isSprinting=false;
-    const moveSpeed = this.isSprinting ? this.sprintSpeed : this.baseSpeed;
-    if(this.isSprinting) this.stamina -= this.stamDrain;
-    else this.stamina += this.stamRecovery;
-    this.stamina = clamp(this.stamina,0,this.maxStam);
-    // movement WASD / arrows
-    let dx=0, dy=0;
-    if(Input.keys['w']||Input.keys['arrowup']) dy -= moveSpeed;
-    if(Input.keys['s']||Input.keys['arrowdown']) dy += moveSpeed;
-    if(Input.keys['a']||Input.keys['arrowleft']) dx -= moveSpeed;
-    if(Input.keys['d']||Input.keys['arrowright']) dx += moveSpeed;
-    if(dx!==0 && dy!==0){ dx*=0.7071; dy*=0.7071; }
-    this.x += dx; this.y += dy;
-    // clamp in world
-    this.x = clamp(this.x, 0, G.w - this.w);
-    this.y = clamp(this.y, 0, G.h - this.h);
-    if(this.hitCooldown>0) this.hitCooldown--;
-  }
-  draw(ctx){
-    ctx.fillStyle = CONFIG.COLORS.player;
-    ctx.fillRect(this.x, this.y, this.w, this.h);
-    // stamina
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(this.x, this.y - 8, this.w, 6);
-    const s = (this.stamina/this.maxStam)*this.w;
-    ctx.fillStyle = '#ffd36b';
-    ctx.fillRect(this.x, this.y - 8, s, 6);
-  }
-  takeDamage(d){
-    if(this.hitCooldown>0) return;
-    this.health -= d;
-    this.hitCooldown = 30;
-    if(this.health<=0){ this.health=0; G.gameState='game_over'; }
-  }
-}
+                <div class="form-group">
+                    <label for="newFormulaText">
+                        <i class="fas fa-square-root-alt"></i> Формула
+                    </label>
+                    <input type="text" id="newFormulaText" placeholder="Например: F = m * a">
+                    <div class="hint">Используйте стандартные математические обозначения</div>
+                </div>
 
-// ------------ Weapon system ------------
-class WeaponSystem {
-  constructor(){
-    this.weapons = this.initWeapons();
-    this.current = 'pistol';
-    this.cooldown = 0;
-    this.mouseDown = false;
-    this.autoTimer = 0;
-  }
-  initWeapons(){
-    return {
-      pistol: {name:'Пистолет', damage:10, cooldown:15, speed:10, size:6, automatic:false, unlocked:true, price:0},
-      shotgun: {name:'Дробовик', damage:6, cooldown:40, speed:8, size:10, bulletCount:5, spread:30, automatic:false, unlocked:false, price:100},
-      rifle: {name:'Автомат', damage:8, cooldown:8, speed:12, size:4, automatic:true, fireRate:5, unlocked:false, price:150},
-      rocket: {name:'Ракетница', damage:25, cooldown:60, speed:6, size:14, explosionRadius:60, automatic:false, unlocked:false, price:200}
-    };
-  }
-  setMouse(down){ this.mouseDown = down; }
-  createBullet(){
-    if(this.cooldown>0) return;
-    const w = this.weapons[this.current];
-    const p = G.player.center();
-    const tx = Input.mouse.x, ty = Input.mouse.y;
-    const ang = Math.atan2(ty - p.y, tx - p.x);
-    if(this.current==='shotgun'){
-      for(let i=0;i<w.bulletCount;i++){
-        const spread = (Math.random()-0.5) * w.spread * Math.PI/180;
-        const a = ang + spread;
-        G.bullets.push({x:p.x,y:p.y,dx:Math.cos(a),dy:Math.sin(a),speed:w.speed,damage:w.damage,weapon:this.current});
-      }
-    } else if(this.current==='rocket'){
-      G.bullets.push({x:p.x,y:p.y,dx:Math.cos(ang),dy:Math.sin(ang),speed:w.speed,damage:w.damage,weapon:this.current,explosion:w.explosionRadius});
-    } else {
-      G.bullets.push({x:p.x,y:p.y,dx:Math.cos(ang),dy:Math.sin(ang),speed:w.speed,damage:w.damage,weapon:this.current});
-    }
-    this.cooldown = w.cooldown;
-  }
-  update(){
-    if(this.cooldown>0) this.cooldown--;
-    const cw = this.weapons[this.current];
-    if(cw.automatic && this.mouseDown){
-      this.autoTimer++;
-      if(this.autoTimer >= cw.fireRate && this.cooldown<=0){
-        this.createBullet();
-        this.autoTimer = 0;
-      }
-    } else this.autoTimer = 0;
-    // update bullets
-    for(let i=G.bullets.length-1;i>=0;i--){
-      const b=G.bullets[i];
-      b.x += b.dx*b.speed;
-      b.y += b.dy*b.speed;
-      // remove out of bounds
-      if(b.x<0||b.x>G.w||b.y<0||b.y>G.h){ G.bullets.splice(i,1); continue;}
-      // collisions
-      // enemies
-      const size = (this.weapons[b.weapon]||this.weapons['pistol']).size;
-      for(let j=G.enemies.length-1;j>=0;j--){
-        const e = G.enemies[j];
-        if(rectCircleCollide(e.x,e.y,e.w,e.h,b.x,b.y,size/2)){
-          const dead = e.takeDamage(b.damage);
-          if(dead){ G.enemies.splice(j,1); G.enemiesKilled++; G.player.coins += 5; G.coins = G.player.coins;}
-          if(b.explosion){ this.createExplosion(b.x,b.y,b.explosion); }
-          if(G.bullets[i]) G.bullets.splice(i,1);
-          break;
-        }
-      }
-      // boss
-      if(G.boss && G.boss.alive){
-        if(rectCircleCollide(G.boss.x,G.boss.y,G.boss.w,G.boss.h,b.x,b.y,size/2)){
-          G.boss.takeDamage(b.damage);
-          if(b.explosion){ this.createExplosion(b.x,b.y,b.explosion); }
-          if(G.bullets[i]) G.bullets.splice(i,1);
-        }
-      }
-    }
-  }
-  draw(ctx){
-    for(const b of G.bullets){
-      ctx.beginPath();
-      ctx.fillStyle = (b.weapon==='rocket'?'#b37bff':'#fff');
-      ctx.arc(b.x, b.y, (this.weapons[b.weapon]||this.weapons['pistol']).size/2, 0, Math.PI*2);
-      ctx.fill();
-    }
-  }
-  createExplosion(x,y,radius){
-    // damage enemies in radius
-    for(let i=G.enemies.length-1;i>=0;i--){
-      const e = G.enemies[i];
-      const d = dist(e.x+e.w/2,e.y+e.h/2,x,y);
-      if(d < radius){
-        const dead = e.takeDamage(40);
-        if(dead){ G.enemies.splice(i,1); G.enemiesKilled++; G.player.coins +=5; G.coins = G.player.coins;}
-      }
-    }
-    // boss
-    if(G.boss && G.boss.alive){
-      const d = dist(G.boss.x+G.boss.w/2,G.boss.y+G.boss.h/2,x,y);
-      if(d < radius) G.boss.takeDamage(80);
-    }
-    // visual
-    G.explosions.push({x,y,r:radius,t:30,max:30});
-  }
-}
+                <div class="form-group">
+                    <label for="formulaCategory">
+                        <i class="fas fa-folder"></i> Категория
+                    </label>
+                    <select id="formulaCategory">
+                        <option value="Механика">Механика</option>
+                        <option value="Электричество">Электричество</option>
+                        <option value="Термодинамика">Термодинамика</option>
+                        <option value="Оптика">Оптика</option>
+                        <option value="Квантовая физика">Квантовая физика</option>
+                        <option value="Прочее">Прочее</option>
+                    </select>
+                </div>
 
-// ------------ Enemy ------------
-class Enemy {
-  constructor(x,y,type='normal'){
-    this.x = x; this.y = y;
-    this.w = 32; this.h = 32;
-    this.type = type;
-    if(type==='normal'){ this.speed=2; this.health=30; this.max=30; this.color='#ffb86b'; }
-    else if(type==='fast'){ this.speed=3.5; this.health=18; this.max=18; this.color='#ff6b6b'; this.w=26; this.h=26;}
-    else { this.speed=1.2; this.health=50; this.max=50; this.color='#6ee07a'; this.w=44; this.h=44;}
-  }
-  center(){ return {x:this.x+this.w/2, y:this.y+this.h/2}; }
-  update(){
-    const p = G.player.center();
-    const dx = p.x - (this.x+this.w/2), dy = p.y - (this.y+this.h/2);
-    const d = Math.max(1, Math.hypot(dx,dy));
-    this.x += dx/d * this.speed;
-    this.y += dy/d * this.speed;
-    // collision with player
-    if(rectsCollide(this.x,this.y,this.w,this.h,G.player.x,G.player.y,G.player.w,G.player.h)){
-      G.player.takeDamage(0.6);
-    }
-  }
-  draw(ctx){
-    ctx.fillStyle = this.color;
-    ctx.fillRect(this.x,this.y,this.w,this.h);
-    // hp bar
-    ctx.fillStyle = '#222';
-    ctx.fillRect(this.x, this.y - 8, this.w, 6);
-    const hpW = clamp(this.health/this.max,0,1)*this.w;
-    ctx.fillStyle = (this.health/this.max>0.6)?'#6ee07a':(this.health/this.max>0.3?'#ffd36b':'#ff6b6b');
-    ctx.fillRect(this.x, this.y - 8, hpW, 6);
-  }
-  takeDamage(d){
-    this.health -= d;
-    return this.health <= 0;
-  }
-}
+                <div class="buttons-container">
+                    <button class="btn" id="saveFormulaBtn">
+                        <i class="fas fa-save"></i> Сохранить формулу
+                    </button>
+                    <button class="btn-secondary" id="clearFormulaBtn">
+                        <i class="fas fa-eraser"></i> Очистить
+                    </button>
+                </div>
 
-// ------------ Boss ------------
-class Boss {
-  constructor(x,y){
-    this.x = x; this.y = y; this.w=120; this.h=120; this.speed=1.2;
-    this.health = 400; this.max=400; this.alive=true;
-    this.color = '#d36bff';
-  }
-  update(){
-    const p = G.player.center();
-    const dx = p.x - (this.x+this.w/2), dy = p.y - (this.y+this.h/2);
-    const d = Math.max(1, Math.hypot(dx,dy));
-    this.x += dx/d * this.speed; this.y += dy/d * this.speed;
-    if(rectsCollide(this.x,this.y,this.w,this.h,G.player.x,G.player.y,G.player.w,G.player.h)){
-      G.player.takeDamage(0.8);
-    }
-  }
-  draw(ctx){
-    ctx.fillStyle = this.color; ctx.fillRect(this.x,this.y,this.w,this.h);
-    // hp
-    ctx.fillStyle = '#222'; ctx.fillRect(this.x, this.y - 10, this.w, 8);
-    const pw = clamp(this.health/this.max,0,1)*this.w;
-    ctx.fillStyle = '#6ee07a'; ctx.fillRect(this.x,this.y-10,pw,8);
-  }
-  takeDamage(d){ this.health -= d; if(this.health<=0){ this.alive=false; G.gameState='playing'; } }
-}
+                <div class="success-message hidden" id="addSuccessMessage">
+                    <i class="fas fa-check-circle"></i> Формула успешно добавлена!
+                </div>
+            </div>
+        </section>
 
-// ------------ Utils for collisions ------------
-function rectsCollide(x1,y1,w1,h1,x2,y2,w2,h2){
-  return !(x1+w1 < x2 || x1 > x2+w2 || y1+h1 < y2 || y1 > y2+h2);
-}
-function rectCircleCollide(rx,ry,rw,rh,cx,cy,cr){
-  const closestX = clamp(cx, rx, rx+rw);
-  const closestY = clamp(cy, ry, ry+rh);
-  const d = dist(cx,cy,closestX,closestY);
-  return d <= cr;
-}
+        <!-- Окно просмотра всех формул -->
+        <section class="view-formulas-section hidden" id="viewFormulasSection">
+            <div class="test-header">
+                <h2><i class="fas fa-list-alt"></i> Все формулы</h2>
+                <button class="btn-secondary" id="backFromViewBtn">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </button>
+                <div class="header-actions">
+                    <button class="btn-secondary" id="exportFormulasBtn">
+                        <i class="fas fa-download"></i> Экспорт
+                    </button>
+                    <button class="btn-secondary" id="importFormulasBtn">
+                        <i class="fas fa-upload"></i> Импорт
+                    </button>
+                </div>
+            </div>
 
-// ------------ Ultra system (beam) ------------
-class Ultra {
-  constructor(){
-    this.charge = 0; this.max = 100;
-    this.active = false; this.duration=180; this.timer=0;
-    this.damage = 6; this.width = 50;
-  }
-  activate(){
-    if(this.charge>=this.max && !this.active){
-      this.active=true; this.timer=this.duration; this.charge=0;
-    }
-  }
-  update(){
-    if(this.active){
-      this.timer--;
-      // beam logic: damage enemies in cone
-      const p = G.player.center();
-      const ang = Math.atan2(Input.mouse.y - p.y, Input.mouse.x - p.x);
-      for(let i=G.enemies.length-1;i>=0;i--){
-        const e = G.enemies[i];
-        const ex = e.x+e.w/2, ey = e.y+e.h/2;
-        const d = dist(p.x,p.y,ex,ey);
-        if(d < 1000){
-          const a2 = Math.atan2(ey-p.y, ex-p.x);
-          let diff = Math.abs(a2-ang);
-          if(diff > Math.PI) diff = Math.abs(2*Math.PI - diff);
-          if(diff < Math.PI*0.15){
-            const dead = e.takeDamage(this.damage);
-            if(dead){ G.enemies.splice(i,1); G.enemiesKilled++; G.player.coins += 5; G.coins = G.player.coins; this.gain(10); }
-          }
-        }
-      }
-      // boss
-      if(G.boss && G.boss.alive){
-        const bx = G.boss.x+G.boss.w/2, by=G.boss.y+G.boss.h/2;
-        const d = dist(p.x,p.y,bx,by);
-        const a2 = Math.atan2(by-p.y,bx-p.x);
-        const diff = Math.abs(a2-ang) > Math.PI ? Math.abs(2*Math.PI - Math.abs(a2-ang)) : Math.abs(a2-ang);
-        if(diff < Math.PI*0.15){ G.boss.takeDamage(this.damage*2); }
-      }
+            <div class="filters">
+                <select id="categoryFilter">
+                    <option value="all">Все категории</option>
+                    <option value="Механика">Механика</option>
+                    <option value="Электричество">Электричество</option>
+                    <option value="Термодинамика">Термодинамика</option>
+                    <option value="Оптика">Оптика</option>
+                    <option value="Квантовая физика">Квантовая физика</option>
+                    <option value="Прочее">Прочее</option>
+                </select>
+                <input type="text" id="searchFormula" placeholder="Поиск формул...">
+                <button class="btn-secondary" id="clearFilterBtn">
+                    <i class="fas fa-times"></i> Очистить
+                </button>
+            </div>
 
-      if(this.timer<=0) this.active=false;
-    }
-  }
-  gain(n){ if(!this.active) this.charge = clamp(this.charge + n, 0, this.max); }
-  draw(ctx){
-    if(this.active){
-      // draw beam polygon
-      const p = G.player.center();
-      const ang = Math.atan2(Input.mouse.y - p.y, Input.mouse.x - p.x);
-      const len = G.w * 2;
-      const perp = this.width/2;
-      const dx = Math.cos(ang), dy = Math.sin(ang);
-      const px = -dy * perp, py = dx*perp;
-      ctx.save();
-      ctx.globalAlpha = 0.12;
-      ctx.fillStyle = '#ffd36b';
-      ctx.beginPath();
-      ctx.moveTo(p.x+px, p.y+py);
-      ctx.lineTo(p.x+dx*len+px, p.y+dy*len+py);
-      ctx.lineTo(p.x+dx*len-px, p.y+dy*len-py);
-      ctx.lineTo(p.x-px, p.y-py);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-  }
-}
+            <div class="formulas-list" id="formulasList">
+                <!-- Формулы будут загружены сюда -->
+            </div>
 
-// ------------ Game logic ------------
-function init(){
-  const canvas = document.getElementById('canvas');
-  G.canvas = canvas; G.ctx = canvas.getContext('2d');
-  G.w = canvas.width; G.h = canvas.height;
-  // init player, weapons
-  G.player = new Player(G.w/2 - 20, G.h - 100);
-  G.weaponSystem = new WeaponSystem();
-  G.ultra = new Ultra();
+            <div class="empty-state" id="emptyFormulasList">
+                <i class="fas fa-inbox"></i>
+                <h3>Нет формул</h3>
+                <p>Добавьте первую формулу, чтобы начать обучение</p>
+            </div>
+        </section>
 
-  // load saved progress
-  loadProgress();
+        <!-- Окно статистики -->
+        <section class="statistics-section hidden" id="statisticsSection">
+            <div class="test-header">
+                <h2><i class="fas fa-chart-bar"></i> Статистика</h2>
+                <button class="btn-secondary" id="backFromStatsBtn">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </button>
+                <div class="header-actions">
+                    <button class="btn-secondary" id="clearStatsBtn">
+                        <i class="fas fa-trash"></i> Очистить историю
+                    </button>
+                </div>
+            </div>
 
-  // UI hooks
-  document.getElementById('btn-start').onclick = ()=>{
-    G.level = 1; G.wave = 0; G.enemies=[]; G.bullets=[]; G.explosions=[]; G.boss=null; G.enemiesKilled=0;
-    G.gameState='playing'; hideAllPanels(); startLevel(G.level);
-  };
-  document.getElementById('btn-exit').onclick = ()=>{ saveProgress(); window.close(); };
-  document.getElementById('btn-levels').onclick = ()=>{ showPanel('level-select'); populateLevels(); };
-  document.getElementById('btn-back-levels').onclick = ()=>{ showPanel('menu'); };
-  document.getElementById('btn-close-shop').onclick = ()=>{ hideAllPanels(); G.gameState='playing'; };
+            <div class="stats-container">
+                <div class="stats-summary">
+                    <div class="stat-card">
+                        <div class="stat-card-icon total-tests">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <div class="stat-card-content">
+                            <div class="stat-card-value" id="totalTests">0</div>
+                            <div class="stat-card-label">Всего тестов</div>
+                        </div>
+                    </div>
 
-  // shop items
-  populateShop();
+                    <div class="stat-card">
+                        <div class="stat-card-icon avg-score">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-card-content">
+                            <div class="stat-card-value" id="avgScore">0%</div>
+                            <div class="stat-card-label">Средний результат</div>
+                        </div>
+                    </div>
 
-  // mouse events for shooting
-  canvas.addEventListener('mousedown', e=>{ G.weaponSystem.setMouse(true); });
-  canvas.addEventListener('mouseup', e=>{ G.weaponSystem.setMouse(false); });
+                    <div class="stat-card">
+                        <div class="stat-card-icon best-score">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="stat-card-content">
+                            <div class="stat-card-value" id="bestScore">0%</div>
+                            <div class="stat-card-label">Лучший результат</div>
+                        </div>
+                    </div>
 
-  // quick keys (numbers + q + p)
-  window.addEventListener('keydown', e=>{
-    if(G.gameState!=='playing') return;
-    if(['1','2','3','4'].includes(e.key)){
-      const mapping = ['pistol','shotgun','rifle','rocket'];
-      const id = mapping[parseInt(e.key)-1];
-      if(G.weaponSystem.weapons[id] && G.weaponSystem.weapons[id].unlocked) G.weaponSystem.current = id;
-    }
-    if(e.key.toLowerCase()==='q'){ G.ultra.activate(); }
-    if(e.key.toLowerCase()==='p'){ G.paused = !G.paused; }
-  });
+                    <div class="stat-card">
+                        <div class="stat-card-icon formulas-count">
+                            <i class="fas fa-square-root-alt"></i>
+                        </div>
+                        <div class="stat-card-content">
+                            <div class="stat-card-value" id="totalFormulasCount">0</div>
+                            <div class="stat-card-label">Всего формул</div>
+                        </div>
+                    </div>
+                </div>
 
-  // save on unload
-  window.addEventListener('beforeunload', saveProgress);
+                <div class="history-section">
+                    <h3><i class="fas fa-history"></i> История тестирований</h3>
+                    <div class="history-list" id="historyList">
+                        <!-- История будет загружена сюда -->
+                    </div>
+                    <div class="empty-state" id="emptyHistory">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>История пуста</h3>
+                        <p>Пройдите тест, чтобы увидеть статистику</p>
+                    </div>
+                </div>
 
-  // start in menu
-  showPanel('menu');
-  requestAnimationFrame(loop);
-}
+                <div class="chart-section">
+                    <h3><i class="fas fa-chart-pie"></i> Распределение результатов</h3>
+                    <div class="chart-container">
+                        <canvas id="resultsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-// Level/wave handling
-function startLevel(lvl){
-  G.level = lvl;
-  document.getElementById('ui-level').innerText = lvl;
-  const levels = {
-    1:{waves:2, enemiesPerWave:6, types:['normal']},
-    2:{waves:2, enemiesPerWave:10, types:['normal','fast']},
-    3:{waves:3, enemiesPerWave:12, types:['normal','fast']},
-    4:{waves:3, enemiesPerWave:18, types:['normal','fast','tank']},
-    5:{waves:1, boss:true}
-  };
-  G.currentLevelDef = levels[lvl] || levels[1];
-  G.wave = 0; G.enemiesToSpawn = 0; G.spawnTimer=0;
-  G.gameState='playing';
-  notify(`Уровень ${lvl} — удачи!`);
-}
+        <!-- Футер -->
+        <footer class="footer">
+            <p>Тренажёр физических формул © 2024</p>
+            <p>Создано для эффективного изучения физики</p>
+            <div class="footer-links">
+                <button class="btn-link" id="exportDataBtn">
+                    <i class="fas fa-file-export"></i> Экспорт данных
+                </button>
+                <button class="btn-link" id="importDataBtn">
+                    <i class="fas fa-file-import"></i> Импорт данных
+                </button>
+                <button class="btn-link" id="resetDataBtn">
+                    <i class="fas fa-redo"></i> Сброс данных
+                </button>
+            </div>
+        </footer>
+    </div>
 
-function _spawnEnemy(type){
-  const side = randInt(0,3);
-  let x,y;
-  if(side===0){ x=randInt(0,G.w); y=-40; }
-  else if(side===1){ x=G.w+40; y=randInt(0,G.h); }
-  else if(side===2){ x=randInt(0,G.w); y=G.h+40; }
-  else { x=-40; y=randInt(0,G.h); }
-  G.enemies.push(new Enemy(x,y,type));
-}
+    <!-- Модальное окно для смены имени (исправлено: id совпадает с JS) -->
+    <div class="modal-overlay hidden" id="userNameModal">
+        <div class="modal modal-sm">
+            <h2><i class="fas fa-user-edit"></i> Изменить имя</h2>
+            <input type="text" id="userNameInput" placeholder="Введите ваше имя" maxlength="20">
+            <div class="modal-buttons">
+                <button class="btn" id="saveUserNameBtn">Сохранить</button>
+                <button class="btn-secondary" id="cancelUserNameBtn">Отмена</button>
+            </div>
+        </div>
+    </div>
 
-function _spawnBoss(){
-  G.boss = new Boss(G.w/2 - 60, -140);
-  notify('Босс появился!');
-}
+    <!-- Модальное окно для импорта данных -->
+    <div class="modal-overlay hidden" id="importModal">
+        <div class="modal">
+            <h2><i class="fas fa-file-import"></i> Импорт данных</h2>
+            <textarea id="importDataText" placeholder="Вставьте данные JSON для импорта..." rows="10"></textarea>
+            <div class="modal-buttons">
+                <button class="btn" id="confirmImportBtn">Импортировать</button>
+                <button class="btn-secondary" id="cancelImportBtn">Отмена</button>
+            </div>
+        </div>
+    </div>
 
-// wave update
-function updateWaves(){
-  const level = G.currentLevelDef;
-  if(!level) return;
-  if(level.boss){
-    if(!G.boss){ _spawnBoss(); return; }
-    if(G.boss && !G.boss.alive){ G.boss = null; nextLevel(); return; }
-    return;
-  }
-  if(G.enemiesToSpawn>0){
-    G.spawnTimer++;
-    if(G.spawnTimer>=G.spawnDelay){
-      G.spawnTimer=0;
-      const et = G.currentLevelDef.types[randInt(0,G.currentLevelDef.types.length-1)];
-      _spawnEnemy(et);
-      G.enemiesToSpawn--;
-    }
-    return;
-  }
-  if(G.enemies.length>0) return;
-  if(G.wave >= (level.waves || 0)){ nextLevel(); return; }
-  if(G.waveCooldown && G.waveCooldown>0){ G.waveCooldown--; return; }
-  // start wave
-  G.wave++;
-  G.enemiesToSpawn = level.enemiesPerWave || 6;
-  G.spawnDelay = 40;
-  G.spawnTimer = 0;
-  G.waveCooldown = 180;
-  notify(`Волна ${G.wave} / ${level.waves || 1}`);
-}
+    <!-- Модальное окно для подтверждения сброса -->
+    <div class="modal-overlay hidden" id="resetModal">
+        <div class="modal">
+            <h2><i class="fas fa-exclamation-triangle"></i> Подтверждение сброса</h2>
+            <p>Вы уверены, что хотите сбросить все данные? Это действие нельзя отменить.</p>
+            <div class="modal-buttons">
+                <button class="btn-danger" id="confirmResetBtn">Сбросить всё</button>
+                <button class="btn-secondary" id="cancelResetBtn">Отмена</button>
+            </div>
+        </div>
+    </div>
 
-// next level, open shop
-function nextLevel(){
-  notify(`Уровень ${G.level} пройден!`);
-  G.player.coins += 50 * G.level; G.coins = G.player.coins;
-  G.unlockedLevels = Math.max(G.unlockedLevels, G.level + 1);
-  G.level++;
-  if(G.level > 5){ G.gameState='victory'; showPanel('menu'); return; }
-  // open shop
-  G.gameState='shop';
-  populateShop();
-  showPanel('shop');
-}
+    <!-- Уведомления -->
+    <div class="toast-container" id="toastContainer"></div>
 
-// ------------ UI helpers ------------
-function showPanel(id){
-  hideAllPanels();
-  document.getElementById(id).style.display='block';
-}
-function hideAllPanels(){
-  ['menu','shop','level-select'].forEach(id=>document.getElementById(id).style.display='none');
-}
-function notify(text, time=2000){
-  const el = document.getElementById('notif');
-  el.innerText = text; el.style.display='block';
-  clearTimeout(el._t);
-  el._t = setTimeout(()=>{ el.style.display='none'; }, time);
-}
-
-// populate shop
-function populateShop(){
-  const shopItems = [
-    {id:'shotgun', name:'Дробовик', price:100, type:'weapon'},
-    {id:'rifle', name:'Автомат', price:150, type:'weapon'},
-    {id:'rocket', name:'Ракетница', price:200, type:'weapon'},
-    {id:'hp', name:'+20 HP', price:30, type:'upgrade'},
-    {id:'damage', name:'+10% урон', price:40, type:'upgrade'}
-  ];
-  const container = document.getElementById('shop-items');
-  container.innerHTML = '';
-  for(const it of shopItems){
-    const div = document.createElement('div'); div.className='item';
-    div.innerHTML = `<h3>${it.name} — ${it.price} монет</h3><p>${it.type==='weapon'?'Оружие': 'Улучшение'}</p>`;
-    const btn = document.createElement('div'); btn.className='buy';
-    btn.innerText='Купить';
-    btn.onclick = ()=>{ buyItem(it); populateShop(); updateHUD(); };
-    div.appendChild(btn);
-    container.appendChild(div);
-  }
-}
-
-// buy logic
-function buyItem(item){
-  if(G.player.coins < item.price){ notify('Недостаточно монет!'); return; }
-  G.player.coins -= item.price; G.coins = G.player.coins;
-  if(item.type==='weapon'){
-    if(G.weaponSystem.weapons[item.id]) G.weaponSystem.weapons[item.id].unlocked = true;
-    notify(`Куплено: ${item.name}`);
-  } else {
-    if(item.id==='hp'){ G.player.maxHealth += 20; G.player.health = G.player.maxHealth; notify('Здоровье увеличено'); }
-    if(item.id==='damage'){
-      for(const w of Object.values(G.weaponSystem.weapons)) w.damage = Math.ceil(w.damage*1.1);
-      notify('Урон повышен на 10%');
-    }
-  }
-  saveProgress();
-}
-
-// levels list
-function populateLevels(){
-  const container = document.getElementById('levels-container');
-  container.innerHTML='';
-  for(let i=1;i<=5;i++){
-    const b = document.createElement('button');
-    b.innerText = `Уровень ${i}`;
-    if(i>G.unlockedLevels){ b.className='locked'; }
-    else b.onclick = ()=>{ hideAllPanels(); startLevel(i); };
-    container.appendChild(b);
-  }
-}
-
-// ------------ Save / Load ------------
-function saveProgress(){
-  const data = {
-    coins: G.player ? G.player.coins : G.coins,
-    unlockedWeapons: Object.fromEntries(Object.entries(G.weaponSystem.weapons).map(([k,v])=>[k, v.unlocked])),
-    player: {maxHealth:G.player.maxHealth, speed:G.player.baseSpeed},
-    unlockedLevels: G.unlockedLevels
-  };
-  localStorage.setItem('ps_game_save', JSON.stringify(data));
-}
-function loadProgress(){
-  const raw = localStorage.getItem('ps_game_save');
-  if(!raw) return;
-  try{
-    const data = JSON.parse(raw);
-    G.coins = data.coins || 0;
-    G.player.coins = G.coins;
-    if(data.unlockedWeapons){
-      for(const [k,v] of Object.entries(data.unlockedWeapons)){
-        if(G.weaponSystem && G.weaponSystem.weapons[k]) G.weaponSystem.weapons[k].unlocked = v;
-      }
-    }
-    if(data.player){
-      G.player.maxHealth = data.player.maxHealth || G.player.maxHealth;
-      G.player.health = G.player.maxHealth;
-      G.player.baseSpeed = data.player.speed || G.player.baseSpeed;
-    }
-    G.unlockedLevels = data.unlockedLevels || 1;
-  }catch(e){}
-}
-
-// ------------ Main loop ------------
-let lastTime = 0;
-function loop(ts){
-  if(!lastTime) lastTime = ts;
-  const dt = ts - lastTime;
-  lastTime = ts;
-
-  // update depending on state
-  if(G.gameState==='playing' && !G.paused){
-    // player update
-    G.player.update();
-    // weapon auto handling
-    // mouse shooting: if clicked and weapon non-automatic -> single shot
-    if(Input.mouse.down){
-      const cw = G.weaponSystem.weapons[G.weaponSystem.current];
-      if(!cw.automatic && G.weaponSystem.cooldown<=0) G.weaponSystem.createBullet();
-    }
-    G.weaponSystem.update();
-    // bullets already handled
-    // enemies
-    for(const e of G.enemies) e.update();
-    // boss
-    if(G.boss && G.boss.alive) G.boss.update();
-    // explosions timer
-    for(let i=G.explosions.length-1;i>=0;i--){
-      const ex = G.explosions[i];
-      ex.t--; if(ex.t<=0) G.explosions.splice(i,1);
-    }
-    // ultra
-    G.ultra.update();
-    // waves
-    updateWaves();
-    // update HUD
-    updateHUD();
-    // gain ultra charge on kills/hits (somewhat)
-    // handled elsewhere (e.g. on enemy death)
-  }
-
-  // draw
-  render();
-
-  if(G.running) requestAnimationFrame(loop);
-}
-
-// ------------ Render ------------
-function render(){
-  const ctx = G.ctx;
-  ctx.clearRect(0,0,G.w,G.h);
-  // background
-  ctx.fillStyle = '#0f1724';
-  ctx.fillRect(0,0,G.w,G.h);
-  // player
-  G.player.draw(ctx);
-  // enemies
-  for(const e of G.enemies) e.draw(ctx);
-  // bullets
-  G.weaponSystem.draw(ctx);
-  // explosions
-  for(const ex of G.explosions){
-    const p = 1 - ex.t/ex.max;
-    const r = ex.r * p;
-    ctx.beginPath();
-    ctx.fillStyle = `rgba(255,165,0,${0.4*(1-p) + 0.2})`;
-    ctx.arc(ex.x,ex.y,r,0,Math.PI*2); ctx.fill();
-  }
-  // boss
-  if(G.boss) G.boss.draw(ctx);
-  // ultra beam
-  G.ultra.draw(ctx);
-  // overlay info
-  if(G.paused){
-    ctx.fillStyle='rgba(0,0,0,0.45)';
-    ctx.fillRect(0,0,G.w,G.h);
-    ctx.fillStyle='#fff'; ctx.font='34px Arial'; ctx.textAlign='center';
-    ctx.fillText('ПАУЗА', G.w/2, G.h/2);
-  }
-  // HUD text update already via DOM
-}
-
-// ------------ HUD update ------------
-function updateHUD(){
-  document.getElementById('ui-kills').innerText = G.enemiesKilled;
-  document.getElementById('ui-level').innerText = G.level;
-  document.getElementById('ui-coins').innerText = G.player.coins;
-  document.getElementById('ui-weapon').innerText = G.weaponSystem.weapons[G.weaponSystem.current].name;
-  const hpPerc = (G.player.health / G.player.maxHealth)*100;
-  document.getElementById('hp-bar').style.width = `${hpPerc}%`;
-  document.getElementById('hp-text').innerText = `${Math.round(G.player.health)}/${G.player.maxHealth}`;
-  const st = (G.player.stamina/G.player.maxStam)*100;
-  document.getElementById('stam-bar').style.width = `${st}%`;
-  document.getElementById('stam-text').innerText = `${Math.round(G.player.stamina)}`;
-  const up = (G.ultra.charge / G.ultra.max)*100;
-  document.getElementById('ultra-bar').style.width = `${up}%`;
-  document.getElementById('ultra-text').innerText = `${Math.round(up)}%`;
-}
-
-// ------------ Helper: automatic spawn and boss progression ------------
-function autoSpawnLogic(){
-  // called when enemy dies we increment ultra and maybe spawn coins etc.
-}
-
-// ------------ Expose createExplosion to weaponSystem (we used closure) ------------
-WeaponSystem.prototype.createExplosion = function(x,y,radius){
-  this.createExplosion = this.createExplosion; // noop to satisfy linter
-};
-
-// ------------ Misc: hooking UI buttons for shop purchases etc. ------------
-function seedInitialEnemies(){
-  // nothing
-}
-
-// ------------ Start everything ------------
-init();
-
-// small hook to allow saving via console
-window.saveGame = saveProgress;
-window.loadGame = loadProgress;
-
-// ensure periodic autosave
-setInterval(()=>{ if(G.gameState!=='menu') saveProgress(); }, 5000);
-</script>
+    <!-- Подключение библиотек -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
-
