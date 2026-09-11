@@ -1,375 +1,159 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тренажёр физических формул</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
-</head>
-<body>
-    <div class="container">
-        <!-- Заголовок -->
-        <header class="header">
-            <div class="logo">
-                <i class="fas fa-atom"></i>
-                <h1>Тренажёр физических формул</h1>
-            </div>
-            <div class="user-info">
-                <div class="user-name" id="userNameDisplay">Гость</div>
-                <button class="btn-icon" id="changeUserBtn" title="Сменить имя">
-                    <i class="fas fa-user-edit"></i>
-                </button>
-            </div>
-        </header>
-
-        <!-- Главное меню -->
-        <section class="menu-section" id="mainMenu">
-            <div class="menu-cards">
-                <div class="menu-card" id="startTestBtn">
-                    <div class="menu-icon">
-                        <i class="fas fa-play-circle"></i>
-                    </div>
-                    <h3>Начать тестирование</h3>
-                    <p>Проверьте свои знания физических формул</p>
-                </div>
-
-                <div class="menu-card" id="addFormulaBtn">
-                    <div class="menu-icon">
-                        <i class="fas fa-plus-circle"></i>
-                    </div>
-                    <h3>Добавить формулу</h3>
-                    <p>Добавьте свою формулу для изучения</p>
-                </div>
-
-                <div class="menu-card" id="viewFormulasBtn">
-                    <div class="menu-icon">
-                        <i class="fas fa-list-alt"></i>
-                    </div>
-                    <h3>Все формулы</h3>
-                    <p>Просмотр всех доступных формул</p>
-                </div>
-
-                <div class="menu-card" id="statisticsBtn">
-                    <div class="menu-icon">
-                        <i class="fas fa-chart-bar"></i>
-                    </div>
-                    <h3>Статистика</h3>
-                    <p>Результаты ваших тестирований</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Окно тестирования -->
-        <section class="test-section hidden" id="testSection">
-            <div class="test-header">
-                <h2><i class="fas fa-clipboard-check"></i> Тестирование</h2>
-                <button class="btn-secondary" id="backToMenuBtn">
-                    <i class="fas fa-arrow-left"></i> Назад
-                </button>
-            </div>
-
-            <div class="progress-container">
-                <div class="progress-info">
-                    <span id="currentQuestion">1</span> из <span id="totalQuestions">10</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-            </div>
-
-            <div class="question-card">
-                <h3 id="formulaName">Название формулы</h3>
-                <div class="formula-input-container">
-                    <input type="text" id="formulaInput" placeholder="Введите формулу (например: F = m * a)" autocomplete="off">
-                    <div class="hint">Используйте * для умножения, / для деления, ^ для степени</div>
-                </div>
-                
-                <div class="buttons-container">
-                    <button class="btn" id="checkAnswerBtn">
-                        <i class="fas fa-check"></i> Проверить
-                    </button>
-                    <button class="btn-secondary" id="skipQuestionBtn">
-                        <i class="fas fa-forward"></i> Пропустить
-                    </button>
-                </div>
-
-                <div class="result-container hidden" id="resultContainer">
-                    <div class="result-message" id="resultMessage"></div>
-                    <div class="correct-answer hidden" id="correctAnswerContainer">
-                        Правильный ответ: <span id="correctAnswer"></span>
-                    </div>
-                    <button class="btn" id="nextQuestionBtn">
-                        <i class="fas fa-arrow-right"></i> Следующий вопрос
-                    </button>
-                </div>
-            </div>
-
-            <div class="score-board hidden" id="scoreBoard">
-                <h3><i class="fas fa-trophy"></i> Результаты теста</h3>
-                <div class="score-stats">
-                    <div class="stat-item">
-                        <div class="stat-label">Правильно:</div>
-                        <div class="stat-value correct" id="correctCount">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Неправильно:</div>
-                        <div class="stat-value incorrect" id="incorrectCount">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Пропущено:</div>
-                        <div class="stat-value skipped" id="skippedCount">0</div>
-                    </div>
-                    <div class="stat-item total">
-                        <div class="stat-label">Всего:</div>
-                        <div class="stat-value" id="totalCount">0</div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <title>Приглашение на свадьбу</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;500&family=Pinyon+Script&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body class="locked">
+        <!-- Экран с конвертом -->
+        <div id="envelope-overlay">
+            <div class="envelope-container">
+                <div class="envelope">
+                    <div class="letter"></div>
+                    <div class="flap"></div>
+                    <div class="body"></div>
+                    <div class="seal">
+                        <span class="heart">♡</span>
+                        <span class="text">ОТКРЫТЬ</span>
                     </div>
                 </div>
-                <div class="percentage" id="percentage">0%</div>
-                <div class="grade" id="grade">Оценка: -</div>
-                <button class="btn" id="finishTestBtn">
-                    <i class="fas fa-home"></i> Вернуться в меню
-                </button>
-            </div>
-        </section>
-
-        <!-- Окно добавления формулы -->
-        <section class="add-formula-section hidden" id="addFormulaSection">
-            <div class="test-header">
-                <h2><i class="fas fa-plus-circle"></i> Добавить новую формулу</h2>
-                <button class="btn-secondary" id="backFromAddBtn">
-                    <i class="fas fa-arrow-left"></i> Назад
-                </button>
-            </div>
-
-            <div class="form-container">
-                <div class="form-group">
-                    <label for="newFormulaName">
-                        <i class="fas fa-heading"></i> Название формулы
-                    </label>
-                    <input type="text" id="newFormulaName" placeholder="Например: Второй закон Ньютона">
-                </div>
-
-                <div class="form-group">
-                    <label for="newFormulaText">
-                        <i class="fas fa-square-root-alt"></i> Формула
-                    </label>
-                    <input type="text" id="newFormulaText" placeholder="Например: F = m * a">
-                    <div class="hint">Используйте стандартные математические обозначения</div>
-                </div>
-
-                <div class="form-group">
-                    <label for="formulaCategory">
-                        <i class="fas fa-folder"></i> Категория
-                    </label>
-                    <select id="formulaCategory">
-                        <option value="Механика">Механика</option>
-                        <option value="Электричество">Электричество</option>
-                        <option value="Термодинамика">Термодинамика</option>
-                        <option value="Оптика">Оптика</option>
-                        <option value="Квантовая физика">Квантовая физика</option>
-                        <option value="Прочее">Прочее</option>
-                    </select>
-                </div>
-
-                <div class="buttons-container">
-                    <button class="btn" id="saveFormulaBtn">
-                        <i class="fas fa-save"></i> Сохранить формулу
-                    </button>
-                    <button class="btn-secondary" id="clearFormulaBtn">
-                        <i class="fas fa-eraser"></i> Очистить
-                    </button>
-                </div>
-
-                <div class="success-message hidden" id="addSuccessMessage">
-                    <i class="fas fa-check-circle"></i> Формула успешно добавлена!
-                </div>
-            </div>
-        </section>
-
-        <!-- Окно просмотра всех формул -->
-        <section class="view-formulas-section hidden" id="viewFormulasSection">
-            <div class="test-header">
-                <h2><i class="fas fa-list-alt"></i> Все формулы</h2>
-                <button class="btn-secondary" id="backFromViewBtn">
-                    <i class="fas fa-arrow-left"></i> Назад
-                </button>
-                <div class="header-actions">
-                    <button class="btn-secondary" id="exportFormulasBtn">
-                        <i class="fas fa-download"></i> Экспорт
-                    </button>
-                    <button class="btn-secondary" id="importFormulasBtn">
-                        <i class="fas fa-upload"></i> Импорт
-                    </button>
-                </div>
-            </div>
-
-            <div class="filters">
-                <select id="categoryFilter">
-                    <option value="all">Все категории</option>
-                    <option value="Механика">Механика</option>
-                    <option value="Электричество">Электричество</option>
-                    <option value="Термодинамика">Термодинамика</option>
-                    <option value="Оптика">Оптика</option>
-                    <option value="Квантовая физика">Квантовая физика</option>
-                    <option value="Прочее">Прочее</option>
-                </select>
-                <input type="text" id="searchFormula" placeholder="Поиск формул...">
-                <button class="btn-secondary" id="clearFilterBtn">
-                    <i class="fas fa-times"></i> Очистить
-                </button>
-            </div>
-
-            <div class="formulas-list" id="formulasList">
-                <!-- Формулы будут загружены сюда -->
-            </div>
-
-            <div class="empty-state" id="emptyFormulasList">
-                <i class="fas fa-inbox"></i>
-                <h3>Нет формул</h3>
-                <p>Добавьте первую формулу, чтобы начать обучение</p>
-            </div>
-        </section>
-
-        <!-- Окно статистики -->
-        <section class="statistics-section hidden" id="statisticsSection">
-            <div class="test-header">
-                <h2><i class="fas fa-chart-bar"></i> Статистика</h2>
-                <button class="btn-secondary" id="backFromStatsBtn">
-                    <i class="fas fa-arrow-left"></i> Назад
-                </button>
-                <div class="header-actions">
-                    <button class="btn-secondary" id="clearStatsBtn">
-                        <i class="fas fa-trash"></i> Очистить историю
-                    </button>
-                </div>
-            </div>
-
-            <div class="stats-container">
-                <div class="stats-summary">
-                    <div class="stat-card">
-                        <div class="stat-card-icon total-tests">
-                            <i class="fas fa-clipboard-list"></i>
-                        </div>
-                        <div class="stat-card-content">
-                            <div class="stat-card-value" id="totalTests">0</div>
-                            <div class="stat-card-label">Всего тестов</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-card-icon avg-score">
-                            <i class="fas fa-percentage"></i>
-                        </div>
-                        <div class="stat-card-content">
-                            <div class="stat-card-value" id="avgScore">0%</div>
-                            <div class="stat-card-label">Средний результат</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-card-icon best-score">
-                            <i class="fas fa-trophy"></i>
-                        </div>
-                        <div class="stat-card-content">
-                            <div class="stat-card-value" id="bestScore">0%</div>
-                            <div class="stat-card-label">Лучший результат</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-card-icon formulas-count">
-                            <i class="fas fa-square-root-alt"></i>
-                        </div>
-                        <div class="stat-card-content">
-                            <div class="stat-card-value" id="totalFormulasCount">0</div>
-                            <div class="stat-card-label">Всего формул</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="history-section">
-                    <h3><i class="fas fa-history"></i> История тестирований</h3>
-                    <div class="history-list" id="historyList">
-                        <!-- История будет загружена сюда -->
-                    </div>
-                    <div class="empty-state" id="emptyHistory">
-                        <i class="fas fa-chart-line"></i>
-                        <h3>История пуста</h3>
-                        <p>Пройдите тест, чтобы увидеть статистику</p>
-                    </div>
-                </div>
-
-                <div class="chart-section">
-                    <h3><i class="fas fa-chart-pie"></i> Распределение результатов</h3>
-                    <div class="chart-container">
-                        <canvas id="resultsChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Футер -->
-        <footer class="footer">
-            <p>Тренажёр физических формул © 2024</p>
-            <p>Создано для эффективного изучения физики</p>
-            <div class="footer-links">
-                <button class="btn-link" id="exportDataBtn">
-                    <i class="fas fa-file-export"></i> Экспорт данных
-                </button>
-                <button class="btn-link" id="importDataBtn">
-                    <i class="fas fa-file-import"></i> Импорт данных
-                </button>
-                <button class="btn-link" id="resetDataBtn">
-                    <i class="fas fa-redo"></i> Сброс данных
-                </button>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Модальное окно для смены имени (исправлено: id совпадает с JS) -->
-    <div class="modal-overlay hidden" id="userNameModal">
-        <div class="modal modal-sm">
-            <h2><i class="fas fa-user-edit"></i> Изменить имя</h2>
-            <input type="text" id="userNameInput" placeholder="Введите ваше имя" maxlength="20">
-            <div class="modal-buttons">
-                <button class="btn" id="saveUserNameBtn">Сохранить</button>
-                <button class="btn-secondary" id="cancelUserNameBtn">Отмена</button>
+                <p class="tap-text">Нажмите, чтобы открыть</p>
             </div>
         </div>
-    </div>
 
-    <!-- Модальное окно для импорта данных -->
-    <div class="modal-overlay hidden" id="importModal">
-        <div class="modal">
-            <h2><i class="fas fa-file-import"></i> Импорт данных</h2>
-            <textarea id="importDataText" placeholder="Вставьте данные JSON для импорта..." rows="10"></textarea>
-            <div class="modal-buttons">
-                <button class="btn" id="confirmImportBtn">Импортировать</button>
-                <button class="btn-secondary" id="cancelImportBtn">Отмена</button>
-            </div>
-        </div>
-    </div>
+        <div class="background-overlay"></div>
 
-    <!-- Модальное окно для подтверждения сброса -->
-    <div class="modal-overlay hidden" id="resetModal">
-        <div class="modal">
-            <h2><i class="fas fa-exclamation-triangle"></i> Подтверждение сброса</h2>
-            <p>Вы уверены, что хотите сбросить все данные? Это действие нельзя отменить.</p>
-            <div class="modal-buttons">
-                <button class="btn-danger" id="confirmResetBtn">Сбросить всё</button>
-                <button class="btn-secondary" id="cancelResetBtn">Отмена</button>
-            </div>
-        </div>
-    </div>
+        <!-- Основной контент -->
+        <main class="container">
+            <!-- Шапка приглашения -->
+            <header class="fade-in">
+                <div class="line-title">
+                    <span class="line"></span>
+                    <span class="text">ПРИГЛАШЕНИЕ</span>
+                    <span class="line"></span>
+                </div>
+                <h1 class="cursive-text">на регистрацию<br />брака</h1>
+                <div class="heart-icon">♡</div>
+            </header>
 
-    <!-- Уведомления -->
-    <div class="toast-container" id="toastContainer"></div>
+            <!-- Вступительный текст -->
+            <section class="intro fade-in delay-1">
+                <p>
+                    Мы будем рады видеть вас<br />в этот особенный для нас день!
+                </p>
+            </section>
 
-    <!-- Подключение библиотек -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="script.js"></script>
-</body>
+            <!-- Основная информация -->
+            <section class="details">
+                <div class="detail-item fade-in delay-2">
+                    <div class="icon">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                        >
+                            <rect
+                                x="3"
+                                y="4"
+                                width="18"
+                                height="18"
+                                rx="2"
+                                ry="2"
+                            ></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                            <path
+                                d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"
+                            ></path>
+                        </svg>
+                    </div>
+                    <div class="text-content">
+                        <span class="label">ДАТА</span>
+                        <span class="value">16 октября 2026 года</span>
+                    </div>
+                </div>
+
+                <div class="detail-item fade-in delay-3">
+                    <div class="icon">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                        >
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div class="text-content">
+                        <span class="label">ВРЕМЯ</span>
+                        <span class="value"
+                            >09:30 <span class="small-text">утра</span></span
+                        >
+                    </div>
+                </div>
+
+                <div class="detail-item fade-in delay-4">
+                    <div class="icon">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                        >
+                            <path
+                                d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+                            ></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                    </div>
+                    <div class="text-content">
+                        <span class="label">МЕСТО РЕГИСТРАЦИИ</span>
+                        <span class="value">ЗАГС, ул. Ленина 98</span>
+                    </div>
+                </div>
+
+                <div class="notice-item fade-in delay-5">
+                    <div class="icon-small">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                        >
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                    </div>
+                    <p>Просим прийти за 15 минут<br />до начала церемонии.</p>
+                </div>
+            </section>
+
+            <!-- Финал -->
+            <footer class="fade-in delay-6">
+                <div class="line-title">
+                    <span class="line"></span>
+                    <span class="heart-small">♡</span>
+                    <span class="line"></span>
+                </div>
+                <p class="final-text">БУДЕМ РАДЫ ВАШЕМУ ПРИСУТСТВИЮ!</p>
+            </footer>
+        </main>
+
+        <script src="script.js"></script>
+    </body>
 </html>
